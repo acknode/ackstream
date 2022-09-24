@@ -1,0 +1,106 @@
+package storage
+
+import (
+	"context"
+	"fmt"
+	"time"
+
+	"github.com/acknode/ackstream/event"
+	"github.com/gocql/gocql"
+)
+
+// use Scylla - a alternative version of Cassandra for key-value storage
+type KVStorage struct {
+	Configs *Configs
+	Cluster *gocql.ClusterConfig
+	Session *gocql.Session
+}
+
+func (storage *KVStorage) Start() error {
+	// support start multiple times
+	if storage.Session != nil && !storage.Session.Closed() {
+		return nil
+	}
+
+	storage.Cluster = gocql.NewCluster(storage.Configs.Hosts...)
+	storage.Cluster.Keyspace = storage.Configs.Keyspace
+
+	session, err := storage.Cluster.CreateSession()
+	if err != nil {
+		return err
+	}
+
+	storage.Session = session
+	return nil
+}
+
+func (storage *KVStorage) Stop() error {
+	if storage.Session != nil && !storage.Session.Closed() {
+		storage.Session.Close()
+	}
+
+	storage.Cluster = nil
+	storage.Session = nil
+	return nil
+}
+
+func (storage *KVStorage) Put(ctx context.Context, e *event.Event) error {
+	ql := fmt.Sprintf("INSERT INTO %s (bucket, workspace, app, type, id, payload, creation_time) VALUES (?, ?, ?, ?, ?, ?, ?)", storage.Configs.Table)
+	query := storage.Session.Query(ql, e.Bucket, e.Workspace, e.App, e.Type, e.Id, e.Payload, e.CreationTime)
+
+	newctx, cancel := context.WithTimeout(ctx, time.Second*5)
+	defer cancel()
+
+	return query.WithContext(newctx).Exec()
+}
+
+func (storage *KVStorage) Get(ctx context.Context, bucket, workspace, app, msgtype string, id string) (*event.Event, error) {
+	ql := fmt.Sprintf("SELECT payload, creation_time FROM %s WHERE bucket = ? AND workspace = ? AND app = ? AND type = ? AND id = ?", storage.Configs.Table)
+	query := storage.Session.Query(ql, bucket, workspace, app, msgtype, id)
+
+	newctx, cancel := context.WithTimeout(ctx, time.Second*5)
+	defer cancel()
+
+	event := event.Event{
+		Bucket:    bucket,
+		Workspace: workspace,
+		App:       app,
+		Type:      msgtype,
+		Id:        id,
+	}
+	err := query.WithContext(newctx).Scan(&event.Payload, &event.CreationTime)
+	return &event, err
+}
+
+func (storage *KVStorage) Scan(ctx context.Context, bucket, workspace, app, msgtype string, size int, page []byte) ([]event.Event, []byte, []error) {
+	ql := fmt.Sprintf("SELECT id, payload, creation_time FROM %s WHERE bucket = ? AND workspace = ? AND app = ? AND type = ? ORDER BY id DESC", storage.Configs.Table)
+	query := storage.Session.Query(ql, bucket, workspace, app, msgtype).PageSize(size)
+
+	events := []event.Event{}
+	errs := []error{}
+
+	iter := query.WithContext(ctx).PageState(page).Iter()
+	scanner := iter.Scanner()
+	for scanner.Next() {
+		event := event.Event{
+			Bucket:    bucket,
+			Workspace: workspace,
+			App:       app,
+			Type:      msgtype,
+		}
+
+		if err := scanner.Scan(&event.Id, &event.Payload, &event.CreationTime); err != nil {
+			errs = append(errs, err)
+			continue
+		}
+
+		events = append(events, event)
+	}
+
+	// scanner.Err() closes the iterator, so scanner nor iter should be used afterwards.
+	if err := scanner.Err(); err != nil {
+		errs = append(errs, err)
+	}
+
+	return events, iter.PageState(), errs
+}

@@ -1,0 +1,15 @@
+version: "3.5"
+
+services:
+  nats:
+    image: nats
+    ports:
+      - "8222:8222"
+      - "6222:6222"
+      - "4222:4222"
+    command: "-js --server_name nats -m 8222"
+
+  scylla:
+    image: scylladb/scylla
+    ports:
+      - "9042:9042"
