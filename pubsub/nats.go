@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/nats-io/nats.go"
+	"github.com/samber/lo"
 )
 
 func NewClient(cfg *Configs) (*nats.Conn, error) {
@@ -25,25 +26,32 @@ func NewStream(client *nats.Conn, cfg *Configs) (nats.JetStreamContext, error) {
 	}
 
 	stream, err := js.StreamInfo(cfg.Name)
-	if err != nil && !errors.Is(err, nats.ErrStreamNotFound) {
-		return nil, err
+	// update
+	if err == nil {
+		stream.Config.Subjects = lo.Uniq(append(stream.Config.Subjects, fmt.Sprintf("%s.%s.*", cfg.Name, cfg.Topic)))
+		if stream, err = js.UpdateStream(&stream.Config); err != nil {
+			return nil, err
+		}
 	}
 
-	// stream was not initialized, we should init it
-	if stream == nil {
-		jsconfs := nats.StreamConfig{
+	if err != nil && errors.Is(err, nats.ErrStreamNotFound) {
+		jscfg := nats.StreamConfig{
 			Name: cfg.Name,
 			Subjects: []string{
 				fmt.Sprintf("%s.%s.*", cfg.Name, cfg.Topic),
 			},
 			// @TODO: define MaxMsgs, MaxBytes, MaxAge, MaxMsgSize, ...
 		}
-		if stream, err = js.AddStream(&jsconfs); err != nil {
+		if stream, err = js.AddStream(&jscfg); err != nil {
 			return nil, err
 		}
 	}
 
-	return js, nil
+	if stream == nil {
+		return nil, err
+	}
+
+	return js, err
 }
 
 func NewPub(jsc nats.JetStreamContext, cfg *Configs) Pub {
@@ -70,7 +78,6 @@ func NewPub(jsc nats.JetStreamContext, cfg *Configs) Pub {
 
 func NewSub(jsc nats.JetStreamContext, cfg *Configs) Sub {
 	return func(topic string, fn SubscribeFn) (func() error, error) {
-
 		sub, err := jsc.Subscribe(topic, func(natmsg *nats.Msg) {
 			msg := Message{
 				Id:   natmsg.Header.Get("Nats-Msg-Id"),

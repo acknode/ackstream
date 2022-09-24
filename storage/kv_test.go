@@ -85,7 +85,7 @@ func TestScan(t *testing.T) {
 	found := 0
 
 	// round up to nearest int
-	round := int(math.RoundToEven(float64(count/size) + 0.5))
+	round := int(math.Round(float64(count/size) + 0.5))
 
 	for i := 0; i < round; i++ {
 		foundmessages, newPage, errs := storage.Scan(
