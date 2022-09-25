@@ -1,5 +1,5 @@
 # General
-ACKSTREAM_REGION=localdatacenter
+ACKSTREAM_REGION=local
 ACKSTREAM_VERSION=v22.2.22
 
 # PubSub

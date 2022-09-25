@@ -5,7 +5,7 @@ import (
 
 	"github.com/acknode/ackstream/event"
 	"github.com/acknode/ackstream/internal/configs"
-	"github.com/acknode/ackstream/pubsub"
+	"github.com/acknode/ackstream/pkg/pubsub"
 	"github.com/acknode/ackstream/storage"
 	"github.com/nats-io/nats.go"
 	"github.com/vmihailenco/msgpack/v5"

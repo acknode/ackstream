@@ -42,8 +42,9 @@ type Sub func(topic, queue string, fn SubscribeFn) (func() error, error)
 type Pub func(topic string, msg *Message) (string, error)
 
 type Configs struct {
-	Uri        string `json:"uri" mapstructure:"ACKSTREAM_PUBSUB_URI"`
-	StreamName string `json:"name" mapstructure:"ACKSTREAM_PUBSUB_STREAM_NAME"`
+	Uri          string `json:"uri" mapstructure:"ACKSTREAM_PUBSUB_URI"`
+	StreamRegion string `json:"region" mapstructure:"ACKSTREAM_PUBSUB_STREAM_REGION"`
+	StreamName   string `json:"name" mapstructure:"ACKSTREAM_PUBSUB_STREAM_NAME"`
 }
 
 const (

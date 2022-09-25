@@ -6,7 +6,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/acknode/ackstream/pubsub"
+	"github.com/acknode/ackstream/pkg/pubsub"
 	"github.com/acknode/ackstream/storage"
 	"github.com/spf13/viper"
 )
@@ -79,11 +79,13 @@ func NewProvider(dirs ...string) (*viper.Viper, error) {
 
 	// set default values
 	// common
-	provider.SetDefault("ACKSTREAM_REGION", "localdatacenter")
+	provider.SetDefault("ACKSTREAM_REGION", "local")
 	provider.SetDefault("ACKSTREAM_VERSION", version())
 
 	// pubsub
 	provider.SetDefault("ACKSTREAM_PUBSUB_URI", "nats://127.0.0.1:4222")
+	// set stream region to global region by default
+	provider.SetDefault("ACKSTREAM_PUBSUB_STREAM_REGION", provider.Get("ACKSTREAM_REGION"))
 	provider.SetDefault("ACKSTREAM_PUBSUB_STREAM_NAME", "ackstream")
 
 	// storage

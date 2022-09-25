@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/acknode/ackstream/pubsub"
+	"github.com/acknode/ackstream/pkg/pubsub"
 	"github.com/nats-io/nats-server/v2/server"
 	natstest "github.com/nats-io/nats-server/v2/test"
 	"github.com/stretchr/testify/assert"
@@ -18,8 +18,9 @@ func TestNatsPubSub(t *testing.T) {
 	TOPIC := "events.put"
 	QUEUE := "stdout"
 	cfg := pubsub.Configs{
-		Uri:        fmt.Sprintf("nats://127.0.0.1:%d", opts.Port),
-		StreamName: "ackstream",
+		Uri:          fmt.Sprintf("nats://127.0.0.1:%d", opts.Port),
+		StreamRegion: "local",
+		StreamName:   "ackstream",
 	}
 
 	client, err := pubsub.NewClient(&cfg, "testing")
