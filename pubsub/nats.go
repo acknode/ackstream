@@ -11,9 +11,9 @@ import (
 	"github.com/samber/lo"
 )
 
-func NewClient(cfg *Configs) (*nats.Conn, error) {
+func NewClient(cfg *Configs, name string) (*nats.Conn, error) {
 	opts := []nats.Option{
-		nats.Name(cfg.Name),
+		nats.Name(fmt.Sprintf("%s-%s", name, cfg.StreamName)),
 	}
 
 	return nats.Connect(cfg.Uri, opts...)
@@ -24,11 +24,12 @@ func NewStream(client *nats.Conn, cfg *Configs) (nats.JetStreamContext, error) {
 	if err != nil {
 		return nil, err
 	}
+	subject := fmt.Sprintf("%s.>", cfg.StreamName)
+	stream, err := js.StreamInfo(cfg.StreamName)
 
-	stream, err := js.StreamInfo(cfg.Name)
 	// update
 	if err == nil {
-		stream.Config.Subjects = lo.Uniq(append(stream.Config.Subjects, fmt.Sprintf("%s.%s.*", cfg.Name, cfg.Topic)))
+		stream.Config.Subjects = lo.Uniq(append(stream.Config.Subjects, subject))
 		if stream, err = js.UpdateStream(&stream.Config); err != nil {
 			return nil, err
 		}
@@ -36,10 +37,8 @@ func NewStream(client *nats.Conn, cfg *Configs) (nats.JetStreamContext, error) {
 
 	if err != nil && errors.Is(err, nats.ErrStreamNotFound) {
 		jscfg := nats.StreamConfig{
-			Name: cfg.Name,
-			Subjects: []string{
-				fmt.Sprintf("%s.%s.*", cfg.Name, cfg.Topic),
-			},
+			Name:     cfg.StreamName,
+			Subjects: []string{subject},
 			// @TODO: define MaxMsgs, MaxBytes, MaxAge, MaxMsgSize, ...
 		}
 		if stream, err = js.AddStream(&jscfg); err != nil {
@@ -56,7 +55,8 @@ func NewStream(client *nats.Conn, cfg *Configs) (nats.JetStreamContext, error) {
 
 func NewPub(jsc nats.JetStreamContext, cfg *Configs) Pub {
 	return func(topic string, msg *Message) (string, error) {
-		natmsg := nats.NewMsg(topic)
+		// @TODO: validate topic
+		natmsg := nats.NewMsg(NewSubjectFromMessage(cfg, topic, msg))
 		natmsg.Data = msg.Data
 
 		// nats headers
@@ -77,31 +77,41 @@ func NewPub(jsc nats.JetStreamContext, cfg *Configs) Pub {
 }
 
 func NewSub(jsc nats.JetStreamContext, cfg *Configs) Sub {
-	return func(topic string, fn SubscribeFn) (func() error, error) {
-		sub, err := jsc.Subscribe(topic, func(natmsg *nats.Msg) {
-			msg := Message{
-				Id:   natmsg.Header.Get("Nats-Msg-Id"),
-				Data: natmsg.Data,
-				Meta: map[string]string{},
-			}
-			for k, v := range natmsg.Header {
-				// get first item only because we only set one value to header key
-				msg.Meta[k] = v[0]
-			}
+	return func(topic, queue string, fn SubscribeFn) (func() error, error) {
+		// @TODO: validate topic & queue
 
-			if err := fn(&msg); err != nil {
-				retry := msg.GetRetryCount()
-				natmsg.Header.Set(METAKEY_RETRY_COUNT, fmt.Sprint(retry+1))
-				// subcribers must handle error by themself
-				// if they throw an error, message will be delivered again
-				natmsg.NakWithDelay(time.Duration(math.Pow(2, float64(retry))))
-				return
-			}
-
-			natmsg.Ack()
-		})
+		subject := NewSubjectFromMessage(cfg, topic, nil)
+		sub, err := jsc.QueueSubscribe(subject, queue, UseSub(fn))
 
 		// return callback to cleanup resources
 		return func() error { return sub.Drain() }, err
 	}
+}
+
+func UseSub(fn SubscribeFn) nats.MsgHandler {
+	return func(natmsg *nats.Msg) {
+		msg := Message{
+			Workspace: natmsg.Header.Get(METAKEY_WORKSPACE),
+			App:       natmsg.Header.Get(METAKEY_APP),
+			Id:        natmsg.Header.Get("Nats-Msg-Id"),
+			Data:      natmsg.Data,
+			Meta:      map[string]string{},
+		}
+		for k, v := range natmsg.Header {
+			// get first item only because we only set one value to header key
+			msg.Meta[k] = v[0]
+		}
+
+		if err := fn(&msg); err != nil {
+			retry := msg.GetRetryCount()
+			natmsg.Header.Set(METAKEY_RETRY_COUNT, fmt.Sprint(retry+1))
+			// subcribers must handle error by themself
+			// if they throw an error, message will be delivered again
+			natmsg.NakWithDelay(time.Duration(math.Pow(2, float64(retry))))
+			return
+		}
+
+		natmsg.Ack()
+	}
+
 }

@@ -7,7 +7,7 @@ import (
 
 	"github.com/acknode/ackstream/pubsub"
 	"github.com/nats-io/nats-server/v2/server"
-	nattest "github.com/nats-io/nats-server/v2/test"
+	natstest "github.com/nats-io/nats-server/v2/test"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -15,42 +15,47 @@ func TestNatsPubSub(t *testing.T) {
 	server, opts := NewNatsServer()
 	defer server.Shutdown()
 
+	TOPIC := "events.put"
+	QUEUE := "stdout"
 	cfg := pubsub.Configs{
-		Name:  "ackstream",
-		Uri:   fmt.Sprintf("nats://127.0.0.1:%d", opts.Port),
-		Topic: "events",
+		Uri:        fmt.Sprintf("nats://127.0.0.1:%d", opts.Port),
+		StreamName: "ackstream",
 	}
 
-	client, err := pubsub.NewClient(&cfg)
+	client, err := pubsub.NewClient(&cfg, "testing")
 	assert.Nil(t, err)
 
 	jsc, err := pubsub.NewStream(client, &cfg)
 	assert.Nil(t, err)
 
+	// make sure we cleanup messages before doing the test
+	err = jsc.PurgeStream(cfg.StreamName)
+	assert.Nil(t, err)
+
 	// init publish function
 	publish := pubsub.NewPub(jsc, &cfg)
 
-	// make sure we cleanup messages before doing the test
-	jsc.PurgeStream(cfg.Name)
-
-	msg, err := pubsub.MsgFromEvent(NewEvent())
+	msg, err := pubsub.NewMsgFromEvent(NewEvent())
 	assert.Nil(t, err)
 
-	eventtopic := fmt.Sprintf("%s.%s.%s", cfg.Name, cfg.Topic, "put")
-
-	pubkey, err := publish(eventtopic, msg)
+	// publish first
+	pubkey, err := publish(TOPIC, msg)
 	assert.Nil(t, err)
 	assert.NotEmpty(t, pubkey)
 	// make sure stream was stored our msg successfully
-	stream, _ := jsc.StreamInfo(cfg.Name)
+	stream, _ := jsc.StreamInfo(cfg.StreamName)
 	assert.NotNil(t, stream)
 	assert.Equal(t, stream.State.Msgs, uint64(1))
+
+	// Make duplicated push
+	_, err = publish(TOPIC, msg)
+	assert.Nil(t, err)
 
 	// subscribe later
 	subscribe := pubsub.NewSub(jsc, &cfg)
 
 	var acktime int64
-	cleanup, err := subscribe(eventtopic, func(natmsg *pubsub.Message) error {
+	cleanup, err := subscribe(TOPIC, QUEUE, func(natmsg *pubsub.Message) error {
 		assert.Equal(t, natmsg.Id, msg.Id)
 		assert.Equal(t, natmsg.Data, msg.Data)
 
@@ -64,8 +69,8 @@ func TestNatsPubSub(t *testing.T) {
 	assert.Nil(t, err)
 	defer cleanup()
 
-	for i := 1; i < 5; i++ {
-		time.Sleep(time.Duration(i) * time.Second)
+	for i := 1; i < 10; i++ {
+		time.Sleep(time.Duration(i*100) * time.Millisecond)
 		if acktime > 0 {
 			break
 		}
@@ -76,8 +81,8 @@ func TestNatsPubSub(t *testing.T) {
 }
 
 func NewNatsServer() (*server.Server, *server.Options) {
-	opts := nattest.DefaultTestOptions
+	opts := natstest.DefaultTestOptions
 	opts.Port = 4242
 	opts.JetStream = true
-	return nattest.RunServer(&opts), &opts
+	return natstest.RunServer(&opts), &opts
 }

@@ -3,8 +3,8 @@ package services
 import (
 	"context"
 
-	"github.com/acknode/ackstream/configs"
 	"github.com/acknode/ackstream/event"
+	"github.com/acknode/ackstream/internal/configs"
 	"github.com/acknode/ackstream/pubsub"
 	"github.com/acknode/ackstream/storage"
 	"github.com/nats-io/nats.go"
@@ -35,7 +35,7 @@ func NewDatastoreConsumer(ctx context.Context) (func() error, error) {
 	// return error will cause of re-process message
 	// only return error if you got I/O error
 	// @TODO: log all errors
-	return subscribe("", func(msg *pubsub.Message) error {
+	return subscribe("events.put", "ackstream.service.datastore", func(msg *pubsub.Message) error {
 		var e event.Event
 		if err := msgpack.Unmarshal(msg.Data, &e); err != nil {
 			return nil
