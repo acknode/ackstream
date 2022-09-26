@@ -11,7 +11,7 @@ import (
 	"github.com/samber/lo"
 )
 
-func NewClient(cfg *Configs, name string) (*nats.Conn, error) {
+func NewConn(cfg *Configs, name string) (*nats.Conn, error) {
 	opts := []nats.Option{
 		nats.Name(fmt.Sprintf("%s-%s", name, cfg.StreamName)),
 	}

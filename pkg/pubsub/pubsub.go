@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/acknode/ackstream/event"
+	"github.com/nats-io/nats.go"
 	"github.com/vmihailenco/msgpack/v5"
 )
 
@@ -47,20 +48,26 @@ type Configs struct {
 	StreamName   string `json:"name" mapstructure:"ACKSTREAM_PUBSUB_STREAM_NAME"`
 }
 
+type ctxkey string
+
 const (
-	CTXKEY_CLIENT       string = "ackstream.pubsub.client"
+	CTXKEY_CONN         ctxkey = "ackstream.pubsub.conn"
 	METAKEY_WORKSPACE   string = "AckStream-Workspace"
 	METAKEY_APP         string = "AckStream-App"
 	METAKEY_RETRY_COUNT string = "AckStream-Retry-Count"
 )
 
-func FromContext[C any](ctx context.Context) (*C, error) {
-	client, ok := ctx.Value(CTXKEY_CLIENT).(*C)
+func WithContext(ctx context.Context, conn *nats.Conn) context.Context {
+	return context.WithValue(ctx, CTXKEY_CONN, conn)
+}
+
+func FromContext(ctx context.Context) (*nats.Conn, error) {
+	conn, ok := ctx.Value(CTXKEY_CONN).(*nats.Conn)
 	if !ok {
-		return nil, errors.New("no pubsub client was configured")
+		return nil, errors.New("no pubsub connection was configured")
 	}
 
-	return client, nil
+	return conn, nil
 }
 
 func NewSubjectFromMessage(cfg *Configs, topic string, msg *Message) string {

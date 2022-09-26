@@ -10,18 +10,20 @@ import (
 
 type ctxkey string
 
-const CTXKEY_CMD_CONFIGS ctxkey = "ackstream.cmd.configs"
+const CTXKEY_CONFIGS ctxkey = "ackstream.cmd.configs"
 
 func New() *cobra.Command {
 	command := &cobra.Command{
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
 			ctx := cmd.Context()
-			cmd.SetContext(context.WithValue(ctx, CTXKEY_CMD_CONFIGS, withConfigs(cmd.Flags())))
+			cmd.SetContext(context.WithValue(ctx, CTXKEY_CONFIGS, withConfigs(cmd.Flags())))
 		},
 	}
 
 	command.PersistentFlags().StringArrayP("configs-dirs", "c", []string{".", "./secrets"}, "path/to/config/file")
 	command.PersistentFlags().StringArrayP("set", "s", []string{}, "override value in config file")
+
+	command.AddCommand(NewStart())
 
 	return command
 }

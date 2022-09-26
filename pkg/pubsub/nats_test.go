@@ -23,7 +23,7 @@ func TestNatsPubSub(t *testing.T) {
 		StreamName:   "ackstream",
 	}
 
-	client, err := pubsub.NewClient(&cfg, "testing")
+	client, err := pubsub.NewConn(&cfg, "testing")
 	assert.Nil(t, err)
 
 	jsc, err := pubsub.NewStream(client, &cfg)

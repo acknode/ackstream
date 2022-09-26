@@ -118,7 +118,7 @@ func genEvent(length int) event.Event {
 
 func setup() (*storage.Storage, func()) {
 	cfg := storage.Configs{
-		Keyspace: "ackstreams",
+		Keyspace: "ackstream",
 		Table:    "messages",
 		Hosts:    []string{"127.0.0.1"},
 	}

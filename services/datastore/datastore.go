@@ -1,4 +1,4 @@
-package services
+package datastore
 
 import (
 	"context"
@@ -13,11 +13,11 @@ import (
 
 type ctxkey string
 
-const CTXKEY_DATASTORE_QUEUE_NAME ctxkey = "ackstream.services.datastore.queue_name"
+const CTXKEY_QUEUE_NAME ctxkey = "ackstream.services.datastore.queue_name"
 
-var ErrServiceDatastoreNoQueue = errors.New("no queue name of service datastore was provided")
+var ErrServiceDatastoreNoQueue = errors.New("pubsub queue name could not be empty")
 
-func NewDatastore(ctx context.Context) (func() error, error) {
+func New(ctx context.Context) (func() error, error) {
 	sub, err := app.NewSubscriber(ctx)
 	if err != nil {
 		return nil, err
@@ -28,7 +28,7 @@ func NewDatastore(ctx context.Context) (func() error, error) {
 		return nil, err
 	}
 
-	queue, ok := ctx.Value(CTXKEY_DATASTORE_QUEUE_NAME).(string)
+	queue, ok := ctx.Value(CTXKEY_QUEUE_NAME).(string)
 	if !ok {
 		return nil, ErrServiceDatastoreNoQueue
 	}

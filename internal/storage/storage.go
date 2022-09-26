@@ -10,7 +10,7 @@ import (
 	"github.com/gocql/gocql"
 )
 
-func NewStorage(cfg *Configs) *Storage {
+func New(cfg *Configs) *Storage {
 	return &Storage{Configs: cfg}
 }
 

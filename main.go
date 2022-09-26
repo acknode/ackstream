@@ -11,7 +11,7 @@ import (
 func main() {
 	defer func() {
 		if r := recover(); r != nil {
-			log.Println("Recovered in f", r)
+			log.Println("Recovered in f:", r)
 			exit(2)
 		}
 	}()
