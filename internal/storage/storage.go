@@ -2,6 +2,7 @@ package storage
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -9,14 +10,18 @@ import (
 	"github.com/gocql/gocql"
 )
 
+func NewStorage(cfg *Configs) *Storage {
+	return &Storage{Configs: cfg}
+}
+
 // use Scylla - a alternative version of Cassandra for key-value storage
-type KVStorage struct {
+type Storage struct {
 	Configs *Configs
 	Cluster *gocql.ClusterConfig
 	Session *gocql.Session
 }
 
-func (storage *KVStorage) Start() error {
+func (storage *Storage) Start() error {
 	// support start multiple times
 	if storage.Session != nil && !storage.Session.Closed() {
 		return nil
@@ -31,10 +36,14 @@ func (storage *KVStorage) Start() error {
 	}
 
 	storage.Session = session
+
+	if ok := Ping(storage); !ok {
+		return errors.New("could not connect to storage")
+	}
 	return nil
 }
 
-func (storage *KVStorage) Stop() error {
+func (storage *Storage) Stop() error {
 	if storage.Session != nil && !storage.Session.Closed() {
 		storage.Session.Close()
 	}
@@ -44,7 +53,7 @@ func (storage *KVStorage) Stop() error {
 	return nil
 }
 
-func (storage *KVStorage) Put(ctx context.Context, e *event.Event) error {
+func (storage *Storage) Put(ctx context.Context, e *event.Event) error {
 	ql := fmt.Sprintf("INSERT INTO %s (bucket, workspace, app, type, id, payload, creation_time) VALUES (?, ?, ?, ?, ?, ?, ?)", storage.Configs.Table)
 	query := storage.Session.Query(ql, e.Bucket, e.Workspace, e.App, e.Type, e.Id, e.Payload, e.CreationTime)
 
@@ -54,7 +63,7 @@ func (storage *KVStorage) Put(ctx context.Context, e *event.Event) error {
 	return query.WithContext(newctx).Exec()
 }
 
-func (storage *KVStorage) Get(ctx context.Context, bucket, workspace, app, msgtype string, id string) (*event.Event, error) {
+func (storage *Storage) Get(ctx context.Context, bucket, workspace, app, msgtype string, id string) (*event.Event, error) {
 	ql := fmt.Sprintf("SELECT payload, creation_time FROM %s WHERE bucket = ? AND workspace = ? AND app = ? AND type = ? AND id = ?", storage.Configs.Table)
 	query := storage.Session.Query(ql, bucket, workspace, app, msgtype, id)
 
@@ -72,7 +81,7 @@ func (storage *KVStorage) Get(ctx context.Context, bucket, workspace, app, msgty
 	return &event, err
 }
 
-func (storage *KVStorage) Scan(ctx context.Context, bucket, workspace, app, msgtype string, size int, page []byte) ([]event.Event, []byte, []error) {
+func (storage *Storage) Scan(ctx context.Context, bucket, workspace, app, msgtype string, size int, page []byte) ([]event.Event, []byte, []error) {
 	ql := fmt.Sprintf("SELECT id, payload, creation_time FROM %s WHERE bucket = ? AND workspace = ? AND app = ? AND type = ? ORDER BY id DESC", storage.Configs.Table)
 	query := storage.Session.Query(ql, bucket, workspace, app, msgtype).PageSize(size)
 

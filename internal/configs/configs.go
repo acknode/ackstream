@@ -6,8 +6,8 @@ import (
 	"os"
 	"strings"
 
+	"github.com/acknode/ackstream/internal/storage"
 	"github.com/acknode/ackstream/pkg/pubsub"
-	"github.com/acknode/ackstream/storage"
 	"github.com/spf13/viper"
 )
 
