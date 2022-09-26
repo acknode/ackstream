@@ -31,7 +31,7 @@ func FromContext(ctx context.Context) (*Configs, error) {
 	return configs, nil
 }
 
-func NewConfigs(provider *viper.Viper, override []string) (*Configs, error) {
+func New(provider *viper.Viper, override []string) (*Configs, error) {
 	configs := Configs{}
 
 	// Allow override configs via parameters
