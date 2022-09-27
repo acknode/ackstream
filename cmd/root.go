@@ -61,10 +61,12 @@ func withConfigs(flags *pflag.FlagSet) *configs.Configs {
 	return cfg
 }
 
-func chain(cmd *cobra.Command, args []string) error {
-	parent := cmd.Parent()
-	err := parent.PersistentPreRunE(parent, args)
+func useChain() func(cmd *cobra.Command, args []string) error {
+	return func(cmd *cobra.Command, args []string) error {
+		parent := cmd.Parent()
+		err := parent.PersistentPreRunE(parent, args)
 
-	cmd.SetContext(parent.Context())
-	return err
+		cmd.SetContext(parent.Context())
+		return err
+	}
 }

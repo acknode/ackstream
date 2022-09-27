@@ -16,6 +16,7 @@ const MSG_MAX_SIZE = 1572864
 type Message struct {
 	Workspace string
 	App       string
+	Type      string
 	Id        string
 
 	Data []byte
@@ -75,7 +76,7 @@ func NewSubjectFromMessage(cfg *Configs, topic string, msg *Message) string {
 	if msg == nil {
 		return strings.Join([]string{cfg.StreamName, topic, ">"}, ".")
 	}
-	return strings.Join([]string{cfg.StreamName, topic, msg.Workspace, msg.App}, ".")
+	return strings.Join([]string{cfg.StreamName, topic, msg.Workspace, msg.App, msg.Type}, ".")
 }
 
 func NewMsgFromEvent(e event.Event) (*Message, error) {
@@ -87,6 +88,7 @@ func NewMsgFromEvent(e event.Event) (*Message, error) {
 	msg := Message{
 		Workspace: e.Workspace,
 		App:       e.App,
+		Type:      e.Type,
 		Id:        e.Id,
 		Data:      data,
 		Meta: map[string]string{

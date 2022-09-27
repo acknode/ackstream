@@ -72,7 +72,7 @@ func NewPub(jsc nats.JetStreamContext, cfg *Configs) Pub {
 			return "", err
 		}
 
-		key := strings.Join([]string{ack.Domain, ack.Stream, fmt.Sprint(ack.Sequence)}, "/")
+		key := strings.Join([]string{ack.Domain, ack.Stream, fmt.Sprint(ack.Sequence), msg.Id}, "/")
 		return key, nil
 	}
 }

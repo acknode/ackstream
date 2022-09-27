@@ -8,6 +8,7 @@ import (
 
 	"github.com/acknode/ackstream/internal/configs"
 	"github.com/acknode/ackstream/internal/storage"
+	"github.com/acknode/ackstream/pkg/logger"
 	"github.com/acknode/ackstream/pkg/pubsub"
 	"github.com/acknode/ackstream/services/datastore"
 	"github.com/spf13/cobra"
@@ -18,6 +19,7 @@ func NewStart() *cobra.Command {
 	command := &cobra.Command{
 		Use: "start",
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+			chain := useChain()
 			if err := chain(cmd, args); err != nil {
 				return err
 			}
@@ -50,18 +52,15 @@ func NewStart() *cobra.Command {
 
 func NewStartDatastore() *cobra.Command {
 	command := &cobra.Command{
-		Use: "datastore",
-		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-			if err := chain(cmd, args); err != nil {
-				return err
-			}
-
-			return nil
-		},
+		Use:               "datastore",
+		PersistentPreRunE: useChain(),
 		Run: func(cmd *cobra.Command, args []string) {
+			ctx := context.Background()
+
 			l := cmd.Context().
 				Value(CTXKEY_LOGGER).(*zap.SugaredLogger).
 				With("service", "datastore")
+			ctx = logger.WithContext(ctx, l)
 
 			queue, err := cmd.Flags().GetString("queue")
 			if err != nil {
@@ -69,7 +68,6 @@ func NewStartDatastore() *cobra.Command {
 				return
 			}
 
-			ctx := context.Background()
 			ctx = context.WithValue(ctx, datastore.CTXKEY_QUEUE_NAME, queue)
 			l.Debugw("load queue name", "queue", queue)
 
