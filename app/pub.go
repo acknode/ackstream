@@ -7,7 +7,7 @@ import (
 	"github.com/acknode/ackstream/pkg/pubsub"
 )
 
-func NewSubscriber(ctx context.Context) (pubsub.Sub, error) {
+func NewPub(ctx context.Context) (pubsub.Pub, error) {
 	cfg, err := configs.FromContext(ctx)
 	if err != nil {
 		return nil, err
@@ -22,5 +22,5 @@ func NewSubscriber(ctx context.Context) (pubsub.Sub, error) {
 		return nil, err
 	}
 
-	return pubsub.NewSub(jsc, cfg.PubSub), nil
+	return pubsub.NewPub(jsc, cfg.PubSub), nil
 }

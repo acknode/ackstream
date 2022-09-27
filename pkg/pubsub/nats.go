@@ -3,6 +3,7 @@ package pubsub
 import (
 	"errors"
 	"fmt"
+	"log"
 	"math"
 	"strings"
 	"time"
@@ -84,7 +85,10 @@ func NewSub(jsc nats.JetStreamContext, cfg *Configs) Sub {
 		sub, err := jsc.QueueSubscribe(subject, queue, UseSub(fn))
 
 		// return callback to cleanup resources
-		return func() error { return sub.Drain() }, err
+		return func() error {
+			log.Println("fuck")
+			return sub.Drain()
+		}, err
 	}
 }
 

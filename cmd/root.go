@@ -34,6 +34,7 @@ func New() *cobra.Command {
 	command.PersistentFlags().StringArrayP("set", "s", []string{}, "override value in config file")
 
 	command.AddCommand(NewStart())
+	command.AddCommand(NewEvents())
 
 	return command
 }

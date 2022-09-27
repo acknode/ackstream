@@ -3,6 +3,7 @@ package datastore
 import (
 	"context"
 	"errors"
+	"log"
 
 	"github.com/acknode/ackstream/app"
 	"github.com/acknode/ackstream/event"
@@ -18,7 +19,7 @@ const CTXKEY_QUEUE_NAME ctxkey = "ackstream.services.datastore.queue_name"
 var ErrServiceDatastoreNoQueue = errors.New("pubsub queue name could not be empty")
 
 func New(ctx context.Context) (func() error, error) {
-	sub, err := app.NewSubscriber(ctx)
+	sub, err := app.NewSub(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -36,8 +37,10 @@ func New(ctx context.Context) (func() error, error) {
 	return sub(event.TOPIC_EVENT_PUT, queue, func(msg *pubsub.Message) error {
 		var e event.Event
 		if err := msgpack.Unmarshal(msg.Data, &e); err != nil {
+			log.Print(err)
 			return nil
 		}
+		log.Println("---", e.Id)
 
 		return s.Put(ctx, &e)
 	})

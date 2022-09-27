@@ -93,18 +93,12 @@ func NewStartDatastore() *cobra.Command {
 			ctx = storage.WithContext(ctx, client)
 			l.Debugw("load storage", "hosts", cfg.Storage.Hosts, "keyspace", cfg.Storage.Keyspace, "table", cfg.Storage.Table)
 
-			run, err := datastore.New(ctx)
+			cleanup, err := datastore.New(ctx)
 			if err != nil {
 				panic(err)
 			}
-
-			go func() {
-				if err := run(); err != nil {
-					panic(err)
-				}
-
-				l.Info("load completed")
-			}()
+			defer cleanup()
+			l.Info("load completed")
 
 			quit := make(chan os.Signal, 1)
 			signal.Notify(quit, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
