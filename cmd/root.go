@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/acknode/ackstream/internal/configs"
+	"github.com/acknode/ackstream/pkg/logger"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
@@ -11,12 +12,21 @@ import (
 type ctxkey string
 
 const CTXKEY_CONFIGS ctxkey = "ackstream.cmd.configs"
+const CTXKEY_LOGGER ctxkey = "ackstream.cmd.logger"
 
 func New() *cobra.Command {
 	command := &cobra.Command{
-		PersistentPreRun: func(cmd *cobra.Command, args []string) {
+		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 			ctx := cmd.Context()
-			cmd.SetContext(context.WithValue(ctx, CTXKEY_CONFIGS, withConfigs(cmd.Flags())))
+
+			cfg := withConfigs(cmd.Flags())
+			ctx = context.WithValue(ctx, CTXKEY_CONFIGS, cfg)
+
+			l := logger.New(cfg.Debug)
+			ctx = context.WithValue(ctx, CTXKEY_LOGGER, l)
+
+			cmd.SetContext(ctx)
+			return nil
 		},
 	}
 
@@ -48,4 +58,12 @@ func withConfigs(flags *pflag.FlagSet) *configs.Configs {
 	}
 
 	return cfg
+}
+
+func chain(cmd *cobra.Command, args []string) error {
+	parent := cmd.Parent()
+	err := parent.PersistentPreRunE(parent, args)
+
+	cmd.SetContext(parent.Context())
+	return err
 }

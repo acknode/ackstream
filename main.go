@@ -24,6 +24,10 @@ func main() {
 }
 
 func exit(code int) {
-	time.Sleep(5 * time.Second)
+	prod := os.Getenv("ACKSTREAM_ENV") != "dev"
+	if prod {
+		time.Sleep(5 * time.Second)
+	}
+
 	os.Exit(code)
 }

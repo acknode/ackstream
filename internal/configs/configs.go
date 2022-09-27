@@ -12,6 +12,7 @@ import (
 )
 
 type Configs struct {
+	Debug   bool
 	Version string `json:"version" mapstructure:"ACKSTREAM_VERSION"`
 	Region  string `json:"region" mapstructure:"ACKSTREAM_REGION"`
 	PubSub  *pubsub.Configs
@@ -59,6 +60,7 @@ func New(provider *viper.Viper, override []string) (*Configs, error) {
 		return nil, err
 	}
 
+	configs.Debug = provider.GetString("ACKSTREAM_ENV") == "dev"
 	return &configs, nil
 }
 

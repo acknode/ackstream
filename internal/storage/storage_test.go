@@ -135,13 +135,7 @@ func setup() (*storage.Storage, func()) {
 		log.Fatal(err)
 	}
 
-	keyspaceql := fmt.Sprintf("CREATE KEYSPACE IF NOT EXISTS %s WITH replication = {'class': 'SimpleStrategy', 'replication_factor' : 1};", cfg.Keyspace)
-	if err := session.Query(keyspaceql).Exec(); err != nil {
-		log.Fatal(err)
-	}
-
-	tableql := fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s.%s (bucket TEXT, workspace TEXT, app TEXT, type TEXT, id TEXT, payload TEXT, creation_time BIGINT, PRIMARY KEY ((bucket, workspace, app, type), id)) WITH CLUSTERING ORDER BY (id DESC);", cfg.Keyspace, cfg.Table)
-	if err := session.Query(tableql).Exec(); err != nil {
+	if err := storage.Migrate(&cfg); err != nil {
 		log.Fatal(err)
 	}
 
