@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/acknode/ackstream/internal/storage"
-	"github.com/acknode/ackstream/internal/stream"
+	"github.com/acknode/ackstream/internal/xstream"
 	"github.com/spf13/viper"
 )
 
@@ -15,7 +15,7 @@ type Configs struct {
 	Debug   bool
 	Version string `json:"version" mapstructure:"ACKSTREAM_VERSION"`
 	Region  string `json:"region" mapstructure:"ACKSTREAM_REGION"`
-	Stream  *stream.Configs
+	Stream  *xstream.Configs
 	Storage *storage.Configs
 }
 
