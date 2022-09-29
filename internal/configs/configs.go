@@ -6,7 +6,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/acknode/ackstream/internal/storage"
+	"github.com/acknode/ackstream/internal/xstorage"
 	"github.com/acknode/ackstream/internal/xstream"
 	"github.com/spf13/viper"
 )
@@ -16,7 +16,7 @@ type Configs struct {
 	Version string `json:"version" mapstructure:"ACKSTREAM_VERSION"`
 	Region  string `json:"region" mapstructure:"ACKSTREAM_REGION"`
 	Stream  *xstream.Configs
-	Storage *storage.Configs
+	Storage *xstorage.Configs
 }
 
 type ctxkey string
@@ -60,7 +60,8 @@ func New(provider *viper.Viper, override []string) (*Configs, error) {
 		return nil, err
 	}
 
-	configs.Debug = provider.GetString("ACKSTREAM_ENV") == "dev"
+	// because we set prefix to be ACKSTREAM, so we can omit it when access cfg value
+	configs.Debug = provider.GetString("ENV") == "dev"
 	return &configs, nil
 }
 

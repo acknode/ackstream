@@ -4,8 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"math"
-	"strconv"
 	"strings"
 	"time"
 
@@ -13,12 +11,12 @@ import (
 	"github.com/acknode/ackstream/internal/logger"
 	"github.com/nats-io/nats.go"
 	"github.com/samber/lo"
-	"go.uber.org/zap"
 )
 
 type ctxkey string
 
-const CTXKEY_CLIENT ctxkey = "ackstream.stream.client"
+const CTXKEY_CONN ctxkey = "ackstream.stream.conn"
+const CTXKEY_JS ctxkey = "ackstream.stream.js"
 
 var MAX_MSG_SIZE int32 = 1024
 var MAX_MSG int64 = 8192      // 8 * 1024
@@ -40,12 +38,12 @@ type Pub func(topic string, e *event.Event) (string, error)
 func NewSubject(cfg *Configs, topic string, e *event.Event) string {
 	// if event is nill, that mean we want to subscribe all events from the partition that event is belong to
 	if e == nil {
-		return strings.Join([]string{cfg.Name, topic, ">"}, ".")
+		return strings.Join([]string{cfg.Region, cfg.Name, topic, ">"}, ".")
 	}
-	return strings.Join([]string{cfg.Name, topic, e.Workspace, e.App, e.Type}, ".")
+	return strings.Join([]string{cfg.Region, cfg.Name, topic, e.Workspace, e.App, e.Type}, ".")
 }
 
-func New(ctx context.Context, cfg *Configs) nats.JetStreamContext {
+func New(ctx context.Context, cfg *Configs) (nats.JetStreamContext, *nats.Conn) {
 	l := logger.FromContext(ctx).With("pkg", "stream")
 
 	opts := []nats.Option{
@@ -74,7 +72,7 @@ func New(ctx context.Context, cfg *Configs) nats.JetStreamContext {
 		panic(err)
 	}
 
-	subject := fmt.Sprintf("%s.>", cfg.Name)
+	subject := fmt.Sprintf("%s.%s.>", cfg.Region, cfg.Name)
 	stream, err := jsc.StreamInfo(cfg.Name)
 
 	// if stream is exist, update the subject list
@@ -117,99 +115,11 @@ func New(ctx context.Context, cfg *Configs) nats.JetStreamContext {
 		panic(errors.New("could not initialize stream successfully"))
 	}
 
-	return jsc
+	return jsc, conn
 }
 
-func NewPub(ctx context.Context, cfg *Configs) Pub {
-	l := logger.FromContext(ctx).
-		With("pkg", "stream").
-		With("fn", "stream.publisher")
-
-	// If stream was not initialized yet, we should init it
-	stream, ok := ctx.Value(CTXKEY_CLIENT).(nats.JetStreamContext)
-	if !ok {
-		l.Debugw("no stream was provided, initialize a new one")
-		stream = New(ctx, cfg)
-	}
-
-	return func(topic string, e *event.Event) (string, error) {
-		msg := nats.NewMsg(NewSubject(cfg, topic, e))
-		msg.Data = e.Data
-
-		// with metadata
-		msg.Header.Set("Nats-Msg-Id", e.Id)
-		msg.Header.Set("AckStream-Event-Id", e.Id)
-		msg.Header.Set("AckStream-Event-Bucket", e.Bucket)
-		msg.Header.Set("AckStream-Event-Workspace", e.Workspace)
-		msg.Header.Set("AckStream-Event-App", e.App)
-		msg.Header.Set("AckStream-Event-Type", e.Type)
-		msg.Header.Set("AckStream-Event-Creation-Time", fmt.Sprint(e.CreationTime))
-
-		ack, err := stream.PublishMsg(msg)
-		if err != nil {
-			l.Error(err.Error(), "key", e.Key())
-			return "", err
-		}
-
-		keys := []string{
-			ack.Domain, ack.Stream, fmt.Sprint(ack.Sequence), e.Id,
-		}
-		l.Debugw("published", "stream_name", ack.Stream, "sequence", ack.Sequence, "key", e.Key())
-		return strings.Join(keys, "/"), nil
-	}
-}
-
-func NewSub(ctx context.Context, cfg *Configs) Sub {
-	l := logger.FromContext(ctx).
-		With("pkg", "stream").
-		With("fn", "stream.subscriber")
-
-	// If stream was not initialized yet, we should init it
-	stream, ok := ctx.Value(CTXKEY_CLIENT).(nats.JetStreamContext)
-	if !ok {
-		l.Debugw("no stream was provided, initialize a new one")
-		stream = New(ctx, cfg)
-	}
-
-	return func(topic, queue string, fn SubscribeFn) (func() error, error) {
-		subject := NewSubject(cfg, topic, nil)
-
-		sub, err := stream.QueueSubscribe(subject, queue, UseSub(fn, l))
-
-		// return callback to cleanup resources
-		return func() error { return sub.Drain() }, err
-	}
-}
-
-func UseSub(fn SubscribeFn, l *zap.SugaredLogger) nats.MsgHandler {
-	return func(msg *nats.Msg) {
-		event := event.Event{
-			Id:        msg.Header.Get("AckStream-Event-Id"),
-			Bucket:    msg.Header.Get("AckStream-Event-Bucket"),
-			Workspace: msg.Header.Get("AckStream-Event-Workspace"),
-			App:       msg.Header.Get("AckStream-Event-App"),
-			Type:      msg.Header.Get("AckStream-Event-Type"),
-			Data:      msg.Data,
-		}
-		ll := l.With("key", event.Key())
-
-		ct, err := strconv.ParseInt(msg.Header.Get("AckStream-Event-Creation-Time"), 10, 64)
-		if err != nil {
-			ll.Errorw(err.Error())
-		}
-		event.CreationTime = ct
-
-		if err := fn(&event); err != nil {
-			retry, _ := strconv.Atoi(msg.Header.Get("AckStream-Meta-Retry"))
-			ll.Errorw(err.Error(), "retry", retry)
-
-			msg.Header.Set("AckStream-Meta-Retry", fmt.Sprint(retry+1))
-			// subcribers must handle error by themself
-			// if they throw an error, message will be delivered again
-			msg.NakWithDelay(time.Duration(math.Pow(2, float64(retry+1))))
-			return
-		}
-
-		msg.Ack()
-	}
+func WithContext(ctx context.Context, conn *nats.Conn, js nats.JetStreamContext) context.Context {
+	ctx = context.WithValue(ctx, CTXKEY_CONN, conn)
+	ctx = context.WithValue(ctx, CTXKEY_JS, js)
+	return ctx
 }

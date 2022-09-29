@@ -6,8 +6,9 @@ import (
 
 	"github.com/acknode/ackstream/app"
 	"github.com/acknode/ackstream/event"
+	"github.com/acknode/ackstream/internal/configs"
 	"github.com/acknode/ackstream/internal/logger"
-	"github.com/acknode/ackstream/internal/storage"
+	"github.com/acknode/ackstream/internal/xstorage"
 )
 
 type ctxkey string
@@ -22,15 +23,14 @@ func New(ctx context.Context) (func() error, error) {
 		panic(ErrServiceDatastoreNoQueue)
 	}
 
-	s, err := storage.FromContext(ctx)
-	if err != nil {
-		panic(err)
-	}
-
 	l := logger.FromContext(ctx).With("service", "datastore")
 	ctx = logger.WithContext(ctx, l)
-	return app.NewSub(ctx, queue, func(e *event.Event) error {
+
+	cfg := configs.FromContext(ctx)
+	put := xstorage.UsePut(ctx, cfg.Storage)
+
+	return app.UseSub(ctx, queue, func(e *event.Event) error {
 		l.Debugw("got event", "key", e.Key())
-		return s.Put(ctx, e)
+		return put(e)
 	})
 }

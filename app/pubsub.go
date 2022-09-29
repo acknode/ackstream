@@ -10,16 +10,14 @@ import (
 
 var TOPIC_EVENTS_PUT = "events.put"
 
-func NewPub(ctx context.Context) func(e *event.Event) (string, error) {
+func UsePub(ctx context.Context) (func(e *event.Event) (string, error), func() error) {
 	cfg := configs.FromContext(ctx)
-	pub := xstream.NewPub(ctx, cfg.Stream)
+	pub, cb := xstream.NewPub(ctx, cfg.Stream)
 
-	return func(e *event.Event) (string, error) {
-		return pub(TOPIC_EVENTS_PUT, e)
-	}
+	return func(e *event.Event) (string, error) { return pub(TOPIC_EVENTS_PUT, e) }, cb
 }
 
-func NewSub(ctx context.Context, queue string, fn xstream.SubscribeFn) (func() error, error) {
+func UseSub(ctx context.Context, queue string, fn xstream.SubscribeFn) (func() error, error) {
 	cfg := configs.FromContext(ctx)
 	sub := xstream.NewSub(ctx, cfg.Stream)
 	return sub(TOPIC_EVENTS_PUT, queue, fn)

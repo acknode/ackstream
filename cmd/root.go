@@ -61,7 +61,7 @@ func withConfigs(flags *pflag.FlagSet) *configs.Configs {
 	return cfg
 }
 
-func useChain() func(cmd *cobra.Command, args []string) error {
+func clichain() func(cmd *cobra.Command, args []string) error {
 	return func(cmd *cobra.Command, args []string) error {
 		parent := cmd.Parent()
 		err := parent.PersistentPreRunE(parent, args)
