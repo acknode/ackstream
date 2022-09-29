@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/acknode/ackstream/internal/configs"
-	"github.com/acknode/ackstream/pkg/logger"
+	"github.com/acknode/ackstream/internal/logger"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )

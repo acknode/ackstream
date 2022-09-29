@@ -17,13 +17,13 @@ func WithContext(ctx context.Context, l *zap.SugaredLogger) context.Context {
 	return context.WithValue(ctx, CTXKEY, l)
 }
 
-func FromContext(ctx context.Context) (*zap.SugaredLogger, error) {
+func FromContext(ctx context.Context) *zap.SugaredLogger {
 	l, ok := ctx.Value(CTXKEY).(*zap.SugaredLogger)
 	if !ok {
-		return nil, errors.New("no logger was configured")
+		panic(errors.New("no logger was configured"))
 	}
 
-	return l, nil
+	return l
 }
 
 func New(debug bool) *zap.SugaredLogger {

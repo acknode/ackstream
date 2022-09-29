@@ -54,8 +54,8 @@ func (storage *Storage) Stop() error {
 }
 
 func (storage *Storage) Put(ctx context.Context, e *event.Event) error {
-	ql := fmt.Sprintf("INSERT INTO %s (bucket, workspace, app, type, id, payload, creation_time) VALUES (?, ?, ?, ?, ?, ?, ?)", storage.Configs.Table)
-	query := storage.Session.Query(ql, e.Bucket, e.Workspace, e.App, e.Type, e.Id, e.Payload, e.CreationTime)
+	ql := fmt.Sprintf("INSERT INTO %s (bucket, workspace, app, type, id, data, creation_time) VALUES (?, ?, ?, ?, ?, ?, ?)", storage.Configs.Table)
+	query := storage.Session.Query(ql, e.Bucket, e.Workspace, e.App, e.Type, e.Id, e.Data, e.CreationTime)
 
 	newctx, cancel := context.WithTimeout(ctx, time.Second*5)
 	defer cancel()
@@ -77,7 +77,7 @@ func (storage *Storage) Get(ctx context.Context, bucket, workspace, app, msgtype
 		Type:      msgtype,
 		Id:        id,
 	}
-	err := query.WithContext(newctx).Scan(&event.Payload, &event.CreationTime)
+	err := query.WithContext(newctx).Scan(&event.Data, &event.CreationTime)
 	return &event, err
 }
 
@@ -98,7 +98,7 @@ func (storage *Storage) Scan(ctx context.Context, bucket, workspace, app, msgtyp
 			Type:      msgtype,
 		}
 
-		if err := scanner.Scan(&event.Id, &event.Payload, &event.CreationTime); err != nil {
+		if err := scanner.Scan(&event.Id, &event.Data, &event.CreationTime); err != nil {
 			errs = append(errs, err)
 			continue
 		}

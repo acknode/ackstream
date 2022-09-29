@@ -1,5 +1,7 @@
 package event
 
+import "strings"
+
 type Event struct {
 	// partition keys
 	// often be the timestamp with format YYMMDD
@@ -13,13 +15,24 @@ type Event struct {
 	Id string `json:"id"`
 
 	// properties
-	Payload      string `json:"payload"`
 	CreationTime int64  `json:"creation_time"`
+	Data         []byte `json:"data"`
 }
 
-func (msg *Event) SetPartitionKeys(event *Event) {
-	msg.Bucket = event.Bucket
-	msg.Workspace = event.Workspace
-	msg.App = event.App
-	msg.Type = event.Type
+func (event *Event) Key() string {
+	keys := []string{
+		event.Bucket,
+		event.Workspace,
+		event.App,
+		event.Type,
+		event.Id,
+	}
+	return strings.Join(keys, "/")
+}
+
+func (event *Event) SetPartitionKeys(e *Event) {
+	event.Bucket = e.Bucket
+	event.Workspace = e.Workspace
+	event.App = e.App
+	event.Type = e.Type
 }

@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/acknode/ackstream/internal/storage"
-	"github.com/acknode/ackstream/pkg/pubsub"
+	"github.com/acknode/ackstream/internal/stream"
 	"github.com/spf13/viper"
 )
 
@@ -15,7 +15,7 @@ type Configs struct {
 	Debug   bool
 	Version string `json:"version" mapstructure:"ACKSTREAM_VERSION"`
 	Region  string `json:"region" mapstructure:"ACKSTREAM_REGION"`
-	PubSub  *pubsub.Configs
+	Stream  *stream.Configs
 	Storage *storage.Configs
 }
 
@@ -27,13 +27,13 @@ func WithContext(ctx context.Context, cfg *Configs) context.Context {
 	return context.WithValue(ctx, CTXKEY, cfg)
 }
 
-func FromContext(ctx context.Context) (*Configs, error) {
+func FromContext(ctx context.Context) *Configs {
 	configs, ok := ctx.Value(CTXKEY).(*Configs)
 	if !ok {
-		return nil, errors.New("no configs was configured")
+		panic(errors.New("no configs was configured"))
 	}
 
-	return configs, nil
+	return configs
 }
 
 func New(provider *viper.Viper, override []string) (*Configs, error) {
@@ -51,7 +51,7 @@ func New(provider *viper.Viper, override []string) (*Configs, error) {
 	}
 
 	// pubsub
-	if err := provider.Unmarshal(&configs.PubSub); err != nil {
+	if err := provider.Unmarshal(&configs.Stream); err != nil {
 		return nil, err
 	}
 

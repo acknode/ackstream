@@ -7,9 +7,8 @@ import (
 	"syscall"
 
 	"github.com/acknode/ackstream/internal/configs"
+	"github.com/acknode/ackstream/internal/logger"
 	"github.com/acknode/ackstream/internal/storage"
-	"github.com/acknode/ackstream/pkg/logger"
-	"github.com/acknode/ackstream/pkg/pubsub"
 	"github.com/acknode/ackstream/services/datastore"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
@@ -74,14 +73,6 @@ func NewStartDatastore() *cobra.Command {
 			cfg := cmd.Context().Value(CTXKEY_CONFIGS).(*configs.Configs)
 			ctx = configs.WithContext(ctx, cfg)
 			l.Debugw("load configs", "version", cfg.Version, "debug", cfg.Debug)
-
-			conn, err := pubsub.NewConn(cfg.PubSub, "cli.datastore")
-			if err != nil {
-				panic(err)
-			}
-			defer conn.Close()
-			ctx = pubsub.WithContext(ctx, conn)
-			l.Debugw("load pubsub", "uri", cfg.PubSub.Uri, "stream_name", cfg.PubSub.StreamName, "stream_region", cfg.PubSub.StreamRegion)
 
 			client := storage.New(cfg.Storage)
 			if err := client.Start(); err != nil {
