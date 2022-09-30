@@ -8,15 +8,15 @@ import (
 	"time"
 
 	"github.com/acknode/ackstream/event"
-	"github.com/acknode/ackstream/internal/logger"
+	"github.com/acknode/ackstream/internal/zlogger"
 	"github.com/nats-io/nats.go"
 	"github.com/samber/lo"
 )
 
 type ctxkey string
 
-const CTXKEY_CONN ctxkey = "ackstream.stream.conn"
-const CTXKEY_JS ctxkey = "ackstream.stream.js"
+const CTXKEY_CONN ctxkey = "ackstream.xstream.conn"
+const CTXKEY_STREAM ctxkey = "ackstream.xstream.stream"
 
 var MAX_MSG_SIZE int32 = 1024
 var MAX_MSG int64 = 8192      // 8 * 1024
@@ -44,7 +44,7 @@ func NewSubject(cfg *Configs, topic string, e *event.Event) string {
 }
 
 func New(ctx context.Context, cfg *Configs) (nats.JetStreamContext, *nats.Conn) {
-	l := logger.FromContext(ctx).With("pkg", "stream")
+	logger := zlogger.FromContext(ctx).With("pkg", "stream")
 
 	opts := []nats.Option{
 		nats.ReconnectWait(3 * time.Second),
@@ -52,23 +52,23 @@ func New(ctx context.Context, cfg *Configs) (nats.JetStreamContext, *nats.Conn) 
 		nats.DisconnectErrHandler(func(c *nats.Conn, err error) {
 			// disconnected error could be nil, for instance when user explicitly closes the connection.
 			if err != nil {
-				l.Errorw(err.Error())
+				logger.Errorw(err.Error())
 			}
 		}),
 		nats.ErrorHandler(func(c *nats.Conn, s *nats.Subscription, err error) {
-			l.Errorw(err.Error(), "subject", s.Subject, "queue", s.Queue)
+			logger.Errorw(err.Error(), "subject", s.Subject, "queue", s.Queue)
 		}),
 	}
 
 	conn, err := nats.Connect(cfg.Uri, opts...)
 	if err != nil {
-		l.Debugw(err.Error(), "uri", cfg.Uri)
+		logger.Debugw(err.Error(), "uri", cfg.Uri)
 		panic(err)
 	}
 
 	jsc, err := conn.JetStream()
 	if err != nil {
-		l.Debugw(err.Error(), "uri", cfg.Uri, "stream_name", cfg.Name)
+		logger.Debugw(err.Error(), "uri", cfg.Uri, "stream_name", cfg.Name)
 		panic(err)
 	}
 
@@ -79,7 +79,7 @@ func New(ctx context.Context, cfg *Configs) (nats.JetStreamContext, *nats.Conn) 
 	if err == nil {
 		stream.Config.Subjects = lo.Uniq(append(stream.Config.Subjects, subject))
 		if stream, err = jsc.UpdateStream(&stream.Config); err != nil {
-			l.Debugw(err.Error(),
+			logger.Debugw(err.Error(),
 				"uri", cfg.Uri,
 				"stream_name", cfg.Name,
 				"subject", subject,
@@ -107,7 +107,7 @@ func New(ctx context.Context, cfg *Configs) (nats.JetStreamContext, *nats.Conn) 
 	}
 
 	if stream == nil {
-		l.Debugw(err.Error(),
+		logger.Debugw(err.Error(),
 			"uri", cfg.Uri,
 			"stream_name", cfg.Name,
 			"subject", subject,
@@ -116,10 +116,4 @@ func New(ctx context.Context, cfg *Configs) (nats.JetStreamContext, *nats.Conn) 
 	}
 
 	return jsc, conn
-}
-
-func WithContext(ctx context.Context, conn *nats.Conn, js nats.JetStreamContext) context.Context {
-	ctx = context.WithValue(ctx, CTXKEY_CONN, conn)
-	ctx = context.WithValue(ctx, CTXKEY_JS, js)
-	return ctx
 }

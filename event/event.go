@@ -15,8 +15,8 @@ type Event struct {
 	Id string `json:"id"`
 
 	// properties
-	CreationTime int64  `json:"creation_time"`
-	Data         []byte `json:"data"`
+	CreationTime int64       `json:"creation_time"`
+	Data         interface{} `json:"data"`
 }
 
 func (event *Event) Key() string {

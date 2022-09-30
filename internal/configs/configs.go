@@ -12,11 +12,10 @@ import (
 )
 
 type Configs struct {
-	Debug   bool
-	Version string `json:"version" mapstructure:"ACKSTREAM_VERSION"`
-	Region  string `json:"region" mapstructure:"ACKSTREAM_REGION"`
-	Stream  *xstream.Configs
-	Storage *xstorage.Configs
+	Debug    bool
+	Version  string `json:"version" mapstructure:"ACKSTREAM_VERSION"`
+	XStream  *xstream.Configs
+	XStorage *xstorage.Configs
 }
 
 type ctxkey string
@@ -51,12 +50,12 @@ func New(provider *viper.Viper, override []string) (*Configs, error) {
 	}
 
 	// pubsub
-	if err := provider.Unmarshal(&configs.Stream); err != nil {
+	if err := provider.Unmarshal(&configs.XStream); err != nil {
 		return nil, err
 	}
 
 	// storage
-	if err := provider.Unmarshal(&configs.Storage); err != nil {
+	if err := provider.Unmarshal(&configs.XStorage); err != nil {
 		return nil, err
 	}
 

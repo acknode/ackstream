@@ -24,8 +24,7 @@ func main() {
 }
 
 func exit(code int) {
-	prod := os.Getenv("ACKSTREAM_ENV") != "dev"
-	if prod {
+	if isdev := os.Getenv("ACKSTREAM_ENV") == "dev"; !isdev {
 		time.Sleep(5 * time.Second)
 	}
 

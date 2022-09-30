@@ -6,34 +6,30 @@ import (
 	"strings"
 
 	"github.com/acknode/ackstream/event"
-	"github.com/acknode/ackstream/internal/logger"
+	"github.com/acknode/ackstream/internal/zlogger"
 	"github.com/nats-io/nats.go"
+	"github.com/vmihailenco/msgpack/v5"
 	"go.uber.org/zap"
 )
 
-func NewPub(ctx context.Context, cfg *Configs) (Pub, func() error) {
-	l := logger.FromContext(ctx).
+func NewPub(ctx context.Context, cfg *Configs) Pub {
+	logger := zlogger.FromContext(ctx).
 		With("pkg", "stream").
 		With("fn", "stream.publisher")
 
-	// If stream was not initialized yet, we should init it
-	conn, hasConn := ctx.Value(CTXKEY_CONN).(*nats.Conn)
-	stream, hasStream := ctx.Value(CTXKEY_JS).(nats.JetStreamContext)
-	if !hasConn || !hasStream {
-		l.Debugw("no stream was provided, initialize a new one")
-		stream, conn = New(ctx, cfg)
-	}
-
-	return UsePub(cfg, stream, l), func() error {
-		conn.Close()
-		return nil
-	}
+	stream, _ := FromContext(ctx)
+	return UsePub(cfg, stream, logger)
 }
 
 func UsePub(cfg *Configs, stream nats.JetStreamContext, l *zap.SugaredLogger) Pub {
 	return func(topic string, e *event.Event) (string, error) {
 		msg := nats.NewMsg(NewSubject(cfg, topic, e))
-		msg.Data = e.Data
+
+		data, err := msgpack.Marshal(e.Data)
+		if err != nil {
+			return "", err
+		}
+		msg.Data = data
 
 		// with metadata
 		msg.Header.Set("Nats-Msg-Id", e.Id)

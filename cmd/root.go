@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/acknode/ackstream/internal/configs"
-	"github.com/acknode/ackstream/internal/logger"
+	"github.com/acknode/ackstream/internal/zlogger"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
@@ -22,8 +22,8 @@ func New() *cobra.Command {
 			cfg := withConfigs(cmd.Flags())
 			ctx = context.WithValue(ctx, CTXKEY_CONFIGS, cfg)
 
-			l := logger.New(cfg.Debug)
-			ctx = context.WithValue(ctx, CTXKEY_LOGGER, l)
+			logger := zlogger.New(cfg.Debug)
+			ctx = context.WithValue(ctx, CTXKEY_LOGGER, logger)
 
 			cmd.SetContext(ctx)
 			return nil

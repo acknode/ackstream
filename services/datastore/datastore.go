@@ -7,8 +7,8 @@ import (
 	"github.com/acknode/ackstream/app"
 	"github.com/acknode/ackstream/event"
 	"github.com/acknode/ackstream/internal/configs"
-	"github.com/acknode/ackstream/internal/logger"
 	"github.com/acknode/ackstream/internal/xstorage"
+	"github.com/acknode/ackstream/internal/zlogger"
 )
 
 type ctxkey string
@@ -23,14 +23,14 @@ func New(ctx context.Context) (func() error, error) {
 		panic(ErrServiceDatastoreNoQueue)
 	}
 
-	l := logger.FromContext(ctx).With("service", "datastore")
-	ctx = logger.WithContext(ctx, l)
+	logger := zlogger.FromContext(ctx).With("service", "datastore")
+	ctx = zlogger.WithContext(ctx, logger)
 
 	cfg := configs.FromContext(ctx)
-	put := xstorage.UsePut(ctx, cfg.Storage)
+	put := xstorage.UsePut(ctx, cfg.XStorage)
 
 	return app.UseSub(ctx, queue, func(e *event.Event) error {
-		l.Debugw("got event", "key", e.Key())
+		logger.Debugw("got event", "key", e.Key())
 		return put(e)
 	})
 }

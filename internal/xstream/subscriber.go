@@ -8,43 +8,31 @@ import (
 	"time"
 
 	"github.com/acknode/ackstream/event"
-	"github.com/acknode/ackstream/internal/logger"
+	"github.com/acknode/ackstream/internal/zlogger"
 	"github.com/nats-io/nats.go"
+	"github.com/vmihailenco/msgpack/v5"
 	"go.uber.org/zap"
 )
 
 func NewSub(ctx context.Context, cfg *Configs) Sub {
-	l := logger.FromContext(ctx).
+	logger := zlogger.FromContext(ctx).
 		With("pkg", "stream").
 		With("fn", "stream.subscriber")
 
-	// If stream was not initialized yet, we should init it
-	conn, hasConn := ctx.Value(CTXKEY_CONN).(*nats.Conn)
-	stream, hasStream := ctx.Value(CTXKEY_JS).(nats.JetStreamContext)
-	if !hasConn || !hasStream {
-		l.Debugw("no stream was provided, initialize a new one")
-		stream, conn = New(ctx, cfg)
-	}
+	stream, _ := FromContext(ctx)
 
 	return func(topic, queue string, fn SubscribeFn) (func() error, error) {
 		subject := NewSubject(cfg, topic, nil)
-		l.Debugw("subscribed", "subject", subject, "queue", queue)
+		logger.Debugw("subscribed", "subject", subject, "queue", queue)
 
-		sub, err := stream.QueueSubscribe(subject, queue, UseSub(fn, l))
+		sub, err := stream.QueueSubscribe(subject, queue, UseSub(fn, logger), nats.DeliverLast())
 
 		// return callback to cleanup resources
-		return func() error {
-			if err := sub.Unsubscribe(); err != nil {
-				return err
-			}
-
-			conn.Close()
-			return nil
-		}, err
+		return func() error { return sub.Drain() }, err
 	}
 }
 
-func UseSub(fn SubscribeFn, l *zap.SugaredLogger) nats.MsgHandler {
+func UseSub(fn SubscribeFn, logger *zap.SugaredLogger) nats.MsgHandler {
 	return func(msg *nats.Msg) {
 		event := event.Event{
 			Id:        msg.Header.Get("AckStream-Event-Id"),
@@ -52,9 +40,13 @@ func UseSub(fn SubscribeFn, l *zap.SugaredLogger) nats.MsgHandler {
 			Workspace: msg.Header.Get("AckStream-Event-Workspace"),
 			App:       msg.Header.Get("AckStream-Event-App"),
 			Type:      msg.Header.Get("AckStream-Event-Type"),
-			Data:      msg.Data,
 		}
-		ll := l.With("key", event.Key())
+		ll := logger.With("key", event.Key())
+		if err := msgpack.Unmarshal(msg.Data, &event.Data); err != nil {
+			ll.Error(err.Error())
+			// if we could not decode the msg data, make sure we mark it as acknowledged
+			return
+		}
 
 		ct, err := strconv.ParseInt(msg.Header.Get("AckStream-Event-Creation-Time"), 10, 64)
 		if err != nil {

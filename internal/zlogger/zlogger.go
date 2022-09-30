@@ -1,4 +1,4 @@
-package logger
+package zlogger
 
 import (
 	"context"
@@ -11,19 +11,19 @@ import (
 
 type ctxkey string
 
-const CTXKEY ctxkey = "ackstream.logger"
+const CTXKEY ctxkey = "ackstream.zlogger"
 
-func WithContext(ctx context.Context, l *zap.SugaredLogger) context.Context {
-	return context.WithValue(ctx, CTXKEY, l)
+func WithContext(ctx context.Context, logger *zap.SugaredLogger) context.Context {
+	return context.WithValue(ctx, CTXKEY, logger)
 }
 
 func FromContext(ctx context.Context) *zap.SugaredLogger {
-	l, ok := ctx.Value(CTXKEY).(*zap.SugaredLogger)
+	logger, ok := ctx.Value(CTXKEY).(*zap.SugaredLogger)
 	if !ok {
 		panic(errors.New("no logger was configured"))
 	}
 
-	return l
+	return logger
 }
 
 func New(debug bool) *zap.SugaredLogger {

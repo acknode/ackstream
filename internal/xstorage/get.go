@@ -5,17 +5,17 @@ import (
 	"fmt"
 
 	"github.com/acknode/ackstream/event"
-	"github.com/acknode/ackstream/internal/logger"
+	"github.com/acknode/ackstream/internal/zlogger"
 )
 
 func UseGet(ctx context.Context, cfg *Configs) func(bucket, workspace, app, etype string, id string) (*event.Event, error) {
-	l := logger.FromContext(ctx).With("pkg", "storage", "fn", "storage.get")
+	logger := zlogger.FromContext(ctx).With("pkg", "storage", "fn", "storage.get")
 	session := FromContext(ctx)
 
 	return func(bucket, workspace, app, etype string, id string) (*event.Event, error) {
 		ql := fmt.Sprintf("SELECT data, creation_time FROM %s WHERE bucket = ? AND workspace = ? AND app = ? AND type = ? AND id = ?", cfg.Table)
 		query := session.Query(ql, bucket, workspace, app, etype, id)
-		l.Debugw("scan events", "ql", ql, "id", id)
+		logger.Debugw("scan events", "ql", ql, "id", id)
 
 		e := event.Event{
 			Bucket:    bucket,
@@ -25,7 +25,7 @@ func UseGet(ctx context.Context, cfg *Configs) func(bucket, workspace, app, etyp
 			Id:        id,
 		}
 		err := query.Scan(&e.Data, &e.CreationTime)
-		l.Debugw("get event", "ql", ql, "key", e.Key(), "found", err == nil)
+		logger.Debugw("get event", "ql", ql, "key", e.Key(), "found", err == nil)
 
 		return &e, err
 	}

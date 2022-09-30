@@ -5,17 +5,17 @@ import (
 	"fmt"
 
 	"github.com/acknode/ackstream/event"
-	"github.com/acknode/ackstream/internal/logger"
+	"github.com/acknode/ackstream/internal/zlogger"
 )
 
 func UseScan(ctx context.Context, cfg *Configs) func(bucket, workspace, app, etype string, size int, page []byte) ([]event.Event, []byte, error) {
-	l := logger.FromContext(ctx).With("pkg", "storage", "fn", "storage.scan")
+	logger := zlogger.FromContext(ctx).With("pkg", "storage", "fn", "storage.scan")
 	session := FromContext(ctx)
 
 	return func(bucket, workspace, app, etype string, size int, page []byte) ([]event.Event, []byte, error) {
 		ql := fmt.Sprintf("SELECT id, data, creation_time FROM %s WHERE bucket = ? AND workspace = ? AND app = ? AND type = ? ORDER BY id DESC", cfg.Table)
 		query := session.Query(ql, bucket, workspace, app, etype).PageSize(size)
-		l.Debugw("scan events", "ql", ql, "size", size, "page", size)
+		logger.Debugw("scan events", "ql", ql, "size", size, "page", size)
 
 		events := []event.Event{}
 		iter := query.WithContext(ctx).PageState(page).Iter()
