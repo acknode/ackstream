@@ -1,6 +1,8 @@
 package event
 
-import "strings"
+import (
+	"strings"
+)
 
 type Event struct {
 	// partition keys

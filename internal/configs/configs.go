@@ -98,6 +98,7 @@ func NewProvider(dirs ...string) (*viper.Viper, error) {
 	provider.SetDefault("ACKSTREAM_STORAGE_HOSTS", []string{"127.0.0.1"})
 	provider.SetDefault("ACKSTREAM_STORAGE_KEYSPACE", "ackstream")
 	provider.SetDefault("ACKSTREAM_STORAGE_TABLE", "events")
+	provider.SetDefault("ACKSTREAM_STORAGE_BUCKET_TEMPLATE", "20060102")
 
 	return provider, nil
 }

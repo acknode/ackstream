@@ -4,12 +4,9 @@ import (
 	"context"
 	"log"
 	"strings"
-	"time"
 
 	"github.com/acknode/ackstream/app"
-	"github.com/acknode/ackstream/event"
 	"github.com/acknode/ackstream/internal/configs"
-	"github.com/acknode/ackstream/utils"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 )
@@ -39,17 +36,7 @@ func NewEventsPub() *cobra.Command {
 				data[kv[0]] = kv[1]
 			}
 
-			now := time.Now().UTC()
-			e := event.Event{
-				Bucket:       utils.NewBucket(now),
-				Workspace:    args[0],
-				App:          args[1],
-				Type:         args[2],
-				Id:           utils.NewId("e"),
-				Data:         data,
-				CreationTime: now.UnixMicro(),
-			}
-			pubkey, err := pub(&e)
+			pubkey, err := pub(args[0], args[1], args[2], data)
 			if err != nil {
 				log.Fatal(err)
 			}
