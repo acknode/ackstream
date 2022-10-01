@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/acknode/ackstream/event"
+	"github.com/acknode/ackstream/entities"
 	"github.com/acknode/ackstream/pkg/zlogger"
 	"github.com/nats-io/nats.go"
 	"github.com/samber/lo"
@@ -29,14 +29,14 @@ type Configs struct {
 	Name   string `json:"name" mapstructure:"ACKSTREAM_STREAM_NAME"`
 }
 
-type SubscribeFn func(e *event.Event) error
+type SubscribeFn func(e *entities.Event) error
 
 type Sub func(topic, queue string, fn SubscribeFn) (func() error, error)
 
-type Pub func(topic string, e *event.Event) (string, error)
+type Pub func(topic string, e *entities.Event) (string, error)
 
-func NewSubject(cfg *Configs, topic string, e *event.Event) string {
-	// if event is nill, that mean we want to subscribe all events from the partition that event is belong to
+func NewSubject(cfg *Configs, topic string, e *entities.Event) string {
+	// if entities is nill, that mean we want to subscribe all entitiess from the partition that entities is belong to
 	if e == nil {
 		return strings.Join([]string{cfg.Region, cfg.Name, topic, ">"}, ".")
 	}

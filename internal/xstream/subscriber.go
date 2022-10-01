@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/acknode/ackstream/event"
+	"github.com/acknode/ackstream/entities"
 	"github.com/acknode/ackstream/pkg/zlogger"
 	"github.com/nats-io/nats.go"
 	"github.com/vmihailenco/msgpack/v5"
@@ -34,15 +34,15 @@ func NewSub(ctx context.Context, cfg *Configs) Sub {
 
 func UseSub(fn SubscribeFn, logger *zap.SugaredLogger) nats.MsgHandler {
 	return func(msg *nats.Msg) {
-		event := event.Event{
+		entities := entities.Event{
 			Id:        msg.Header.Get("AckStream-Event-Id"),
 			Bucket:    msg.Header.Get("AckStream-Event-Bucket"),
 			Workspace: msg.Header.Get("AckStream-Event-Workspace"),
 			App:       msg.Header.Get("AckStream-Event-App"),
 			Type:      msg.Header.Get("AckStream-Event-Type"),
 		}
-		ll := logger.With("key", event.Key())
-		if err := msgpack.Unmarshal(msg.Data, &event.Data); err != nil {
+		ll := logger.With("key", entities.Key())
+		if err := msgpack.Unmarshal(msg.Data, &entities.Data); err != nil {
 			ll.Error(err.Error())
 			// if we could not decode the msg data, make sure we mark it as acknowledged
 			return
@@ -52,9 +52,9 @@ func UseSub(fn SubscribeFn, logger *zap.SugaredLogger) nats.MsgHandler {
 		if err != nil {
 			ll.Errorw(err.Error())
 		}
-		event.CreationTime = ct
+		entities.CreationTime = ct
 
-		if err := fn(&event); err != nil {
+		if err := fn(&entities); err != nil {
 			retry, _ := strconv.Atoi(msg.Header.Get("AckStream-Meta-Retry"))
 			ll.Errorw(err.Error(), "retry", retry)
 

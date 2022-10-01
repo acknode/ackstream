@@ -8,7 +8,7 @@ import (
 	"syscall"
 
 	"github.com/acknode/ackstream/app"
-	"github.com/acknode/ackstream/event"
+	"github.com/acknode/ackstream/entities"
 	"github.com/acknode/ackstream/internal/configs"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
@@ -30,8 +30,8 @@ func NewEventsSub() *cobra.Command {
 			ctx, disconnect := app.NewContext(context.Background(), logger, cfg)
 			defer disconnect()
 
-			cb, err := app.UseSub(ctx, queue, func(e *event.Event) error {
-				log.Printf("event: bucket=%s ws=%s app=%s type=%s id=%s", e.Bucket, e.Workspace, e.App, e.Type, e.Id)
+			cb, err := app.UseSub(ctx, queue, func(e *entities.Event) error {
+				log.Printf("events: bucket=%s ws=%s app=%s type=%s id=%s", e.Bucket, e.Workspace, e.App, e.Type, e.Id)
 				return nil
 			})
 			if err != nil {

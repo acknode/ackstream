@@ -5,7 +5,7 @@ import (
 	"errors"
 
 	"github.com/acknode/ackstream/app"
-	"github.com/acknode/ackstream/event"
+	"github.com/acknode/ackstream/entities"
 	"github.com/acknode/ackstream/internal/configs"
 	"github.com/acknode/ackstream/internal/xstorage"
 	"github.com/acknode/ackstream/pkg/zlogger"
@@ -29,8 +29,8 @@ func New(ctx context.Context) (func() error, error) {
 	cfg := configs.FromContext(ctx)
 	put := xstorage.UsePut(ctx, cfg.XStorage)
 
-	return app.UseSub(ctx, queue, func(e *event.Event) error {
-		logger.Debugw("got event", "key", e.Key())
+	return app.UseSub(ctx, queue, func(e *entities.Event) error {
+		logger.Debugw("got entities", "key", e.Key())
 		return put(e)
 	})
 }

@@ -4,20 +4,20 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/acknode/ackstream/event"
+	"github.com/acknode/ackstream/entities"
 	"github.com/acknode/ackstream/pkg/zlogger"
 )
 
-func UseGet(ctx context.Context, cfg *Configs) func(bucket, workspace, app, etype string, id string) (*event.Event, error) {
+func UseGet(ctx context.Context, cfg *Configs) func(bucket, workspace, app, etype string, id string) (*entities.Event, error) {
 	logger := zlogger.FromContext(ctx).With("pkg", "storage", "fn", "storage.get")
 	session := FromContext(ctx)
 
-	return func(bucket, workspace, app, etype string, id string) (*event.Event, error) {
+	return func(bucket, workspace, app, etype string, id string) (*entities.Event, error) {
 		ql := fmt.Sprintf("SELECT data, creation_time FROM %s WHERE bucket = ? AND workspace = ? AND app = ? AND type = ? AND id = ?", cfg.Table)
 		query := session.Query(ql, bucket, workspace, app, etype, id)
-		logger.Debugw("scan events", "ql", ql, "id", id)
+		logger.Debugw("scan entitiess", "ql", ql, "id", id)
 
-		e := event.Event{
+		e := entities.Event{
 			Bucket:    bucket,
 			Workspace: workspace,
 			App:       app,
@@ -25,7 +25,7 @@ func UseGet(ctx context.Context, cfg *Configs) func(bucket, workspace, app, etyp
 			Id:        id,
 		}
 		err := query.Scan(&e.Data, &e.CreationTime)
-		logger.Debugw("get event", "ql", ql, "key", e.Key(), "found", err == nil)
+		logger.Debugw("get entities", "ql", ql, "key", e.Key(), "found", err == nil)
 
 		return &e, err
 	}
