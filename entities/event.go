@@ -2,6 +2,8 @@ package entities
 
 import (
 	"strings"
+
+	"github.com/acknode/ackstream/utils"
 )
 
 type Event struct {
@@ -19,6 +21,16 @@ type Event struct {
 	// properties
 	CreationTime int64       `json:"creation_time"`
 	Data         interface{} `json:"data"`
+}
+
+func (event *Event) WithId() bool {
+	// only set new id it the id didn't set yet
+	if event.Id == "" {
+		event.Id = utils.NewId("event")
+		return false
+	}
+
+	return true
 }
 
 func (event *Event) Key() string {
