@@ -19,7 +19,7 @@ func New() *cobra.Command {
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 			ctx := cmd.Context()
 
-			cfg := withConfigs(cmd.Flags())
+			cfg := WithConfigs(cmd.Flags())
 			ctx = context.WithValue(ctx, CTXKEY_CONFIGS, cfg)
 
 			logger := zlogger.New(cfg.Debug)
@@ -39,7 +39,7 @@ func New() *cobra.Command {
 	return command
 }
 
-func withConfigs(flags *pflag.FlagSet) *configs.Configs {
+func WithConfigs(flags *pflag.FlagSet) *configs.Configs {
 	sets, err := flags.GetStringArray("set")
 	if err != nil {
 		panic(err)
@@ -61,7 +61,7 @@ func withConfigs(flags *pflag.FlagSet) *configs.Configs {
 	return cfg
 }
 
-func clichain() func(cmd *cobra.Command, args []string) error {
+func Chain() func(cmd *cobra.Command, args []string) error {
 	return func(cmd *cobra.Command, args []string) error {
 		parent := cmd.Parent()
 		err := parent.PersistentPreRunE(parent, args)

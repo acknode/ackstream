@@ -14,7 +14,7 @@ import (
 func NewEventsGet() *cobra.Command {
 	command := &cobra.Command{
 		Use:               "get",
-		PersistentPreRunE: clichain(),
+		PersistentPreRunE: Chain(),
 		Args:              cobra.ExactArgs(5),
 		Run: func(cmd *cobra.Command, args []string) {
 			logger := cmd.Context().

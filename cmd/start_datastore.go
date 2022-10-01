@@ -19,7 +19,7 @@ func NewStartDatastore() *cobra.Command {
 	command := &cobra.Command{
 		Use: "datastore",
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-			chain := clichain()
+			chain := Chain()
 			if err := chain(cmd, args); err != nil {
 				return err
 			}

@@ -14,7 +14,7 @@ import (
 func NewEventsPub() *cobra.Command {
 	command := &cobra.Command{
 		Use:               "pub",
-		PersistentPreRunE: clichain(),
+		PersistentPreRunE: Chain(),
 		Args:              cobra.ExactArgs(3),
 		Run: func(cmd *cobra.Command, args []string) {
 			logger := cmd.Context().

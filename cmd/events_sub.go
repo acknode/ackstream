@@ -17,7 +17,7 @@ import (
 func NewEventsSub() *cobra.Command {
 	command := &cobra.Command{
 		Use:               "sub",
-		PersistentPreRunE: clichain(),
+		PersistentPreRunE: Chain(),
 		Args:              cobra.ExactArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
 			queue := args[0]

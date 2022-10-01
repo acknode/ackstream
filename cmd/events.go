@@ -7,7 +7,7 @@ import (
 func NewEvents() *cobra.Command {
 	command := &cobra.Command{
 		Use:               "events",
-		PersistentPreRunE: clichain(),
+		PersistentPreRunE: Chain(),
 	}
 
 	command.AddCommand(NewEventsPub())
