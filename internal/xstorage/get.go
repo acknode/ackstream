@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/acknode/ackstream/event"
-	"github.com/acknode/ackstream/internal/zlogger"
+	"github.com/acknode/ackstream/pkg/zlogger"
 )
 
 func UseGet(ctx context.Context, cfg *Configs) func(bucket, workspace, app, etype string, id string) (*event.Event, error) {

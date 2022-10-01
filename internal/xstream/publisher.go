@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/acknode/ackstream/event"
-	"github.com/acknode/ackstream/internal/zlogger"
+	"github.com/acknode/ackstream/pkg/zlogger"
 	"github.com/nats-io/nats.go"
 	"github.com/vmihailenco/msgpack/v5"
 	"go.uber.org/zap"

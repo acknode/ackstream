@@ -6,7 +6,7 @@ import (
 	"fmt"
 
 	"github.com/acknode/ackstream/event"
-	"github.com/acknode/ackstream/internal/zlogger"
+	"github.com/acknode/ackstream/pkg/zlogger"
 )
 
 func UsePut(ctx context.Context, cfg *Configs) func(e *event.Event) error {

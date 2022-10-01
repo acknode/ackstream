@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/acknode/ackstream/event"
-	"github.com/acknode/ackstream/internal/zlogger"
+	"github.com/acknode/ackstream/pkg/zlogger"
 	"github.com/nats-io/nats.go"
 	"github.com/samber/lo"
 )

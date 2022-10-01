@@ -5,7 +5,7 @@ import (
 
 	"github.com/acknode/ackstream/internal/configs"
 	"github.com/acknode/ackstream/internal/xstream"
-	"github.com/acknode/ackstream/internal/zlogger"
+	"github.com/acknode/ackstream/pkg/zlogger"
 	"go.uber.org/zap"
 )
 

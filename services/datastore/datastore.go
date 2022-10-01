@@ -8,7 +8,7 @@ import (
 	"github.com/acknode/ackstream/event"
 	"github.com/acknode/ackstream/internal/configs"
 	"github.com/acknode/ackstream/internal/xstorage"
-	"github.com/acknode/ackstream/internal/zlogger"
+	"github.com/acknode/ackstream/pkg/zlogger"
 )
 
 type ctxkey string

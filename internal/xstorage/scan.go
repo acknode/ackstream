@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/acknode/ackstream/event"
-	"github.com/acknode/ackstream/internal/zlogger"
+	"github.com/acknode/ackstream/pkg/zlogger"
 )
 
 func UseScan(ctx context.Context, cfg *Configs) func(bucket, workspace, app, etype string, size int, page []byte) ([]event.Event, []byte, error) {

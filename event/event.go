@@ -31,10 +31,3 @@ func (event *Event) Key() string {
 	}
 	return strings.Join(keys, "/")
 }
-
-func (event *Event) SetPartitionKeys(e *Event) {
-	event.Bucket = e.Bucket
-	event.Workspace = e.Workspace
-	event.App = e.App
-	event.Type = e.Type
-}
