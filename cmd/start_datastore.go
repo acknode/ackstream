@@ -32,9 +32,7 @@ func NewStartDatastore() *cobra.Command {
 			return nil
 		},
 		Run: func(cmd *cobra.Command, args []string) {
-			logger := cmd.Context().
-				Value(CTXKEY_LOGGER).(*zap.SugaredLogger).
-				With("service", "datastore")
+			logger := cmd.Context().Value(CTXKEY_LOGGER).(*zap.SugaredLogger)
 			cfg := cmd.Context().Value(CTXKEY_CONFIGS).(*configs.Configs)
 			ctx, disconnect := app.NewContext(context.Background(), logger, cfg)
 			defer disconnect()
