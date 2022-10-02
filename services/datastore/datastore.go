@@ -6,8 +6,8 @@ import (
 
 	"github.com/acknode/ackstream/app"
 	"github.com/acknode/ackstream/entities"
-	"github.com/acknode/ackstream/internal/configs"
 	"github.com/acknode/ackstream/internal/xstorage"
+	"github.com/acknode/ackstream/pkg/configs"
 	"github.com/acknode/ackstream/pkg/zlogger"
 )
 

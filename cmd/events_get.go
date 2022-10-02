@@ -5,8 +5,8 @@ import (
 	"time"
 
 	"github.com/acknode/ackstream/app"
-	"github.com/acknode/ackstream/internal/configs"
 	"github.com/acknode/ackstream/internal/xstorage"
+	"github.com/acknode/ackstream/pkg/configs"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 )
