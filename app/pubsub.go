@@ -18,11 +18,13 @@ func UsePub(ctx context.Context) func(ws, app, etype string, data interface{}) (
 	return func(ws, app, etype string, data interface{}) (string, error) {
 		bucket, ts := utils.NewBucket(cfg.XStorage.BucketTemplate)
 		e := entities.Event{
-			Bucket:       bucket,
+			Bucket:    bucket,
+			Workspace: ws,
+			App:       app,
+			Type:      etype,
+
 			CreationTime: ts,
-			Workspace:    ws,
-			App:          app,
-			Type:         etype,
+			Data:         data,
 		}
 		e.WithId()
 
