@@ -30,7 +30,7 @@ func NewEventsPub() *cobra.Command {
 				log.Fatal(err)
 			}
 
-			data := map[string]interface{}{"app": "cli"}
+			data := map[string]string{"app": "cli"}
 			for _, arg := range props {
 				kv := strings.Split(arg, "=")
 				data[kv[0]] = kv[1]

@@ -12,11 +12,11 @@ import (
 
 var TOPIC_EVENTS_PUT = "events.put"
 
-func UsePub(ctx context.Context) func(ws, app, etype string, data map[string]interface{}) (string, error) {
+func UsePub(ctx context.Context) func(ws, app, etype string, data interface{}) (string, error) {
 	cfg := configs.FromContext(ctx)
 	pub := xstream.NewPub(ctx, cfg.XStream)
 
-	return func(ws, app, etype string, data map[string]interface{}) (string, error) {
+	return func(ws, app, etype string, data interface{}) (string, error) {
 		bucket, ts := utils.NewBucket(cfg.XStorage.BucketTemplate)
 		encoded, err := json.Marshal(data)
 		if err != nil {
