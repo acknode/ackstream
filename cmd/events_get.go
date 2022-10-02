@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"context"
-	"time"
 
 	"github.com/acknode/ackstream/app"
 	"github.com/acknode/ackstream/internal/xstorage"
@@ -35,13 +34,12 @@ func NewEventsGet() *cobra.Command {
 				logger.Fatal(err)
 			}
 
-			logger.Infow("got event",
-				"key", e.Key(),
-				"data", e.Data,
-				"creation_time", time.UnixMicro(e.CreationTime).Format(time.RFC3339),
-			)
+			nowrapping, _ := cmd.Flags().GetBool("nowrapping")
+			draw(e, nowrapping)
 		},
 	}
+
+	command.Flags().BoolP("nowrapping", "w", false, "disable wrapping (or) row/column width restrictions")
 
 	return command
 }

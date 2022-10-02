@@ -8,7 +8,6 @@ import (
 	"github.com/acknode/ackstream/entities"
 	"github.com/acknode/ackstream/pkg/zlogger"
 	"github.com/nats-io/nats.go"
-	"github.com/vmihailenco/msgpack/v5"
 	"go.uber.org/zap"
 )
 
@@ -24,12 +23,7 @@ func NewPub(ctx context.Context, cfg *Configs) Pub {
 func UsePub(cfg *Configs, stream nats.JetStreamContext, l *zap.SugaredLogger) Pub {
 	return func(topic string, e *entities.Event) (string, error) {
 		msg := nats.NewMsg(NewSubject(cfg, topic, e))
-
-		data, err := msgpack.Marshal(e.Data)
-		if err != nil {
-			return "", err
-		}
-		msg.Data = data
+		msg.Data = []byte(e.Data)
 
 		// with metadata
 		msg.Header.Set("Nats-Msg-Id", e.Id)

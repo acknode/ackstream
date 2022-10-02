@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+	"errors"
 	"log"
 	"os"
 	"os/signal"
@@ -16,11 +17,22 @@ import (
 
 func NewEventsSub() *cobra.Command {
 	command := &cobra.Command{
-		Use:               "sub",
-		PersistentPreRunE: Chain(),
-		Args:              cobra.ExactArgs(1),
+		Use: "sub",
+		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+			chain := Chain()
+			if err := chain(cmd, args); err != nil {
+				return err
+			}
+
+			queue, err := cmd.Flags().GetString("queue")
+			if err != nil || queue == "" {
+				return errors.New("no queue name was configured")
+			}
+
+			return nil
+		},
 		Run: func(cmd *cobra.Command, args []string) {
-			queue := args[0]
+			queue, _ := cmd.Flags().GetString("queue")
 
 			logger := cmd.Context().
 				Value(CTXKEY_LOGGER).(*zap.SugaredLogger).
@@ -30,8 +42,9 @@ func NewEventsSub() *cobra.Command {
 			ctx, disconnect := app.NewContext(context.Background(), logger, cfg)
 			defer disconnect()
 
+			nowrapping, _ := cmd.Flags().GetBool("nowrapping")
 			cb, err := app.UseSub(ctx, queue, func(e *entities.Event) error {
-				log.Printf("events: bucket=%s ws=%s app=%s type=%s id=%s", e.Bucket, e.Workspace, e.App, e.Type, e.Id)
+				draw(e, nowrapping)
 				return nil
 			})
 			if err != nil {
@@ -46,7 +59,9 @@ func NewEventsSub() *cobra.Command {
 		},
 	}
 
+	command.Flags().StringP("queue", "q", os.Getenv("ACKSTREAM_STREAM_QUEUE"), "specify your queue name, NOT use production queue name")
 	command.Flags().StringArrayP("props", "p", []string{}, "message body properties")
+	command.Flags().BoolP("nowrapping", "w", false, "disable wrapping (or) row/column width restrictions")
 
 	return command
 }

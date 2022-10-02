@@ -10,7 +10,6 @@ import (
 	"github.com/acknode/ackstream/entities"
 	"github.com/acknode/ackstream/pkg/zlogger"
 	"github.com/nats-io/nats.go"
-	"github.com/vmihailenco/msgpack/v5"
 	"go.uber.org/zap"
 )
 
@@ -40,14 +39,9 @@ func UseSub(fn SubscribeFn, logger *zap.SugaredLogger) nats.MsgHandler {
 			Workspace: msg.Header.Get("AckStream-Event-Workspace"),
 			App:       msg.Header.Get("AckStream-Event-App"),
 			Type:      msg.Header.Get("AckStream-Event-Type"),
+			Data:      string(msg.Data),
 		}
 		ll := logger.With("key", entities.Key())
-		if err := msgpack.Unmarshal(msg.Data, &entities.Data); err != nil {
-			ll.Error(err.Error())
-			// if we could not decode the msg data, make sure we mark it as acknowledged
-			return
-		}
-
 		ct, err := strconv.ParseInt(msg.Header.Get("AckStream-Event-Creation-Time"), 10, 64)
 		if err != nil {
 			ll.Errorw(err.Error())

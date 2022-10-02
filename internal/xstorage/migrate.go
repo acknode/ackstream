@@ -24,7 +24,7 @@ func Migrate(cfg *Configs) error {
 	tableql := fmt.Sprintf(
 		`CREATE TABLE IF NOT EXISTS %s.%s (
 			bucket TEXT, workspace TEXT, app TEXT, type TEXT, id TEXT, 
-			data BLOB, creation_time BIGINT, 
+			data TEXT, creation_time BIGINT, 
 			PRIMARY KEY ((bucket, workspace, app, type), id)) 
 			WITH CLUSTERING ORDER BY (id DESC);`,
 		cfg.Keyspace, cfg.Table)
