@@ -13,3 +13,15 @@ services:
     image: scylladb/scylla
     ports:
       - "9042:9042"
+  
+  service.datastore:
+    build: ./
+    command: start datastore --auto-migrate
+    depends_on:
+      - nats
+      - scylla
+    environment:
+      - ACKSTREAM_ENV=dev
+      - ACKSTREAM_STREAM_URI=nats://nats
+      - ACKSTREAM_STORAGE_HOSTS=scylla
+      - ACKSTREAM_STREAM_QUEUE=docker-compose

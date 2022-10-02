@@ -15,6 +15,7 @@ func NewContext(ctx context.Context, logger *zap.SugaredLogger, cfg *configs.Con
 
 	stream, conn := xstream.New(ctx, cfg.XStream)
 	ctx = xstream.WithContext(ctx, stream, conn)
+	logger.Debugw("load stream", "uri", cfg.XStream.Uri, "name", cfg.XStream.Name, "region", cfg.XStream.Region)
 
 	return ctx, func() { conn.Drain() }
 }

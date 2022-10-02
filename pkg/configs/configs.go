@@ -13,7 +13,7 @@ import (
 
 type Configs struct {
 	Debug    bool
-	Version  string `json:"version" mapstructure:"ACKSTREAM_VERSION"`
+	Version  string `json:"version" mapstructure:"VERSION"`
 	XStream  *xstream.Configs
 	XStorage *xstorage.Configs
 }
@@ -60,17 +60,17 @@ func New(provider *viper.Viper, override []string) (*Configs, error) {
 	}
 
 	// because we set prefix to be ACKSTREAM, so we can omit it when access cfg value
-	configs.Debug = provider.GetString("ENV") == "dev"
+	configs.Debug = provider.GetString("ACKSTREAM_ENV") == "dev"
 	return &configs, nil
 }
 
 func NewProvider(dirs ...string) (*viper.Viper, error) {
 	provider := viper.New()
+
+	provider.AutomaticEnv()
+
 	provider.SetConfigName("configs")
 	provider.SetConfigType("props")
-
-	provider.SetEnvPrefix("ACKSTREAM")
-	provider.AutomaticEnv()
 
 	for _, dir := range dirs {
 		provider.AddConfigPath(dir)
@@ -78,7 +78,7 @@ func NewProvider(dirs ...string) (*viper.Viper, error) {
 
 	if err := provider.MergeInConfig(); err != nil {
 		// ignore not found files
-		if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
+		if _, notfound := err.(viper.ConfigFileNotFoundError); !notfound {
 			return nil, err
 		}
 	}
@@ -89,10 +89,10 @@ func NewProvider(dirs ...string) (*viper.Viper, error) {
 	provider.SetDefault("ACKSTREAM_VERSION", version())
 
 	// pubsub
-	provider.SetDefault("ACKSTREAM_PUBSUB_URI", "nats://127.0.0.1:4222")
 	// set stream region to global region by default
-	provider.SetDefault("ACKSTREAM_PUBSUB_STREAM_REGION", provider.Get("ACKSTREAM_REGION"))
-	provider.SetDefault("ACKSTREAM_PUBSUB_STREAM_NAME", "ackstream")
+	provider.SetDefault("ACKSTREAM_STREAM_REGION", provider.Get("ACKSTREAM_REGION"))
+	provider.SetDefault("ACKSTREAM_STREAM_URI", "nats://127.0.0.1:4222")
+	provider.SetDefault("ACKSTREAM_STREAM_NAME", "ackstream")
 
 	// storage
 	provider.SetDefault("ACKSTREAM_STORAGE_HOSTS", []string{"127.0.0.1"})
