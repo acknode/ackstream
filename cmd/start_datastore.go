@@ -54,13 +54,13 @@ func NewStartDatastore() *cobra.Command {
 				return
 			}
 			defer cleanup()
-			logger.Info("load completed")
+			logger.Debug("load completed")
 
 			quit := make(chan os.Signal, 1)
 			signal.Notify(quit, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 			<-quit
 
-			logger.Info("stopping")
+			logger.Debug("stopping")
 		},
 	}
 
