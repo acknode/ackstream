@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/acknode/ackstream/cmd"
+	"github.com/acknode/ackstream/pkg/configs"
 )
 
 func main() {
@@ -24,7 +25,7 @@ func main() {
 }
 
 func exit(code int) {
-	if isdev := os.Getenv("ACKSTREAM_ENV") == "dev"; !isdev {
+	if debug := configs.IsDebug("ACKSTREAM_ENV"); !debug {
 		time.Sleep(5 * time.Second)
 	}
 

@@ -35,7 +35,7 @@ func draw(e *entities.Event, nowrapping bool) {
 	t.AppendRow([]interface{}{"app", e.App})
 	t.AppendRow([]interface{}{"type", e.Type})
 	t.AppendRow([]interface{}{"id", e.Id})
-	t.AppendRow([]interface{}{"creation_time", time.UnixNano(e.CreationTime).Format(time.RFC3339)})
+	t.AppendRow([]interface{}{"creation_time", time.UnixMilli(e.CreationTime).Format(time.RFC3339)})
 	t.AppendSeparator()
 	t.AppendRow([]interface{}{"data", e.Data})
 	t.Render()

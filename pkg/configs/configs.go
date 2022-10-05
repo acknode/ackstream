@@ -35,9 +35,14 @@ func FromContext(ctx context.Context) *Configs {
 	return configs
 }
 
+func IsDebug(envkey string) bool {
+	return os.Getenv(envkey) == "dev"
+}
+
 func New(provider *viper.Viper, override []string) (*Configs, error) {
-	configs := Configs{}
-	configs.Debug = provider.GetString("ACKSTREAM_ENV") == "dev"
+	configs := Configs{
+		Debug: IsDebug("ACKSTREAM_ENV"),
+	}
 
 	// Allow override configs via parameters
 	for _, s := range override {
