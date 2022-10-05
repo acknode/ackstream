@@ -37,6 +37,7 @@ func FromContext(ctx context.Context) *Configs {
 
 func New(provider *viper.Viper, override []string) (*Configs, error) {
 	configs := Configs{}
+	configs.Debug = provider.GetString("ACKSTREAM_ENV") == "dev"
 
 	// Allow override configs via parameters
 	for _, s := range override {
@@ -59,8 +60,6 @@ func New(provider *viper.Viper, override []string) (*Configs, error) {
 		return nil, err
 	}
 
-	// because we set prefix to be ACKSTREAM, so we can omit it when access cfg value
-	configs.Debug = provider.GetString("ACKSTREAM_ENV") == "dev"
 	return &configs, nil
 }
 
