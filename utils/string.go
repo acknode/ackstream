@@ -13,5 +13,5 @@ func NewId(prefix string) string {
 
 func NewBucket(template string) (string, int64) {
 	now := time.Now().UTC()
-	return now.Format(template), now.UnixMicro()
+	return now.Format(template), now.UnixNano()
 }
