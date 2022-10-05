@@ -12,6 +12,7 @@ func Migrate(cfg *Configs) error {
 	if err != nil {
 		return err
 	}
+	defer session.Close()
 
 	keyspaceql := fmt.Sprintf(
 		`CREATE KEYSPACE IF NOT EXISTS %s WITH replication = {'class': 'SimpleStrategy', 'replication_factor' : 1};`,
