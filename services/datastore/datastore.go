@@ -24,14 +24,15 @@ func New(ctx context.Context) (func() error, error) {
 		panic(ErrServiceDatastoreNoQueue)
 	}
 
+	logger := zlogger.FromContext(ctx).With("service", "datastore")
+	ctx = zlogger.WithContext(ctx, logger)
+
 	return app.UseSub(ctx, queue, UseHandler(ctx))
 }
 
 func UseHandler(ctx context.Context) xstream.SubscribeFn {
-	logger := zlogger.FromContext(ctx).With("service", "datastore")
-	ctx = zlogger.WithContext(ctx, logger)
-
 	cfg := configs.FromContext(ctx)
+	logger := zlogger.FromContext(ctx)
 	put := xstorage.UsePut(ctx, cfg.XStorage)
 
 	return func(e *entities.Event) error {
