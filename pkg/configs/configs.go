@@ -6,8 +6,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/acknode/ackstream/internal/xstorage"
-	"github.com/acknode/ackstream/internal/xstream"
+	"github.com/acknode/ackstream/pkg/xstorage"
+	"github.com/acknode/ackstream/pkg/xstream"
 	"github.com/spf13/viper"
 )
 

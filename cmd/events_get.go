@@ -4,8 +4,8 @@ import (
 	"context"
 
 	"github.com/acknode/ackstream/app"
-	"github.com/acknode/ackstream/internal/xstorage"
 	"github.com/acknode/ackstream/pkg/configs"
+	"github.com/acknode/ackstream/pkg/xstorage"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 )

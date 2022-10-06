@@ -3,8 +3,8 @@ package app
 import (
 	"context"
 
-	"github.com/acknode/ackstream/internal/xstream"
 	"github.com/acknode/ackstream/pkg/configs"
+	"github.com/acknode/ackstream/pkg/xstream"
 	"github.com/acknode/ackstream/pkg/zlogger"
 	"go.uber.org/zap"
 )

@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 
 	"github.com/acknode/ackstream/entities"
-	"github.com/acknode/ackstream/internal/xstream"
 	"github.com/acknode/ackstream/pkg/configs"
+	"github.com/acknode/ackstream/pkg/xstream"
 	"github.com/acknode/ackstream/utils"
 )
 
