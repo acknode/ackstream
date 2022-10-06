@@ -7,6 +7,7 @@ import (
 	"github.com/acknode/ackstream/app"
 	"github.com/acknode/ackstream/entities"
 	"github.com/acknode/ackstream/internal/xstorage"
+	"github.com/acknode/ackstream/internal/xstream"
 	"github.com/acknode/ackstream/pkg/configs"
 	"github.com/acknode/ackstream/pkg/zlogger"
 )
@@ -23,14 +24,18 @@ func New(ctx context.Context) (func() error, error) {
 		panic(ErrServiceDatastoreNoQueue)
 	}
 
+	return app.UseSub(ctx, queue, UseHandler(ctx))
+}
+
+func UseHandler(ctx context.Context) xstream.SubscribeFn {
 	logger := zlogger.FromContext(ctx).With("service", "datastore")
 	ctx = zlogger.WithContext(ctx, logger)
 
 	cfg := configs.FromContext(ctx)
 	put := xstorage.UsePut(ctx, cfg.XStorage)
 
-	return app.UseSub(ctx, queue, func(e *entities.Event) error {
+	return func(e *entities.Event) error {
 		logger.Debugw("got entities", "key", e.Key())
 		return put(e)
-	})
+	}
 }
