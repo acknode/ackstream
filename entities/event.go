@@ -23,6 +23,20 @@ type Event struct {
 	Data         string `json:"data"`
 }
 
+func (event *Event) SetPartitionKeys(ds *Event) bool {
+	// only set new id it the id didn't set yet
+	ok := event.Bucket == "" && event.Workspace == "" && event.App == "" && event.Type == ""
+	if !ok {
+		return false
+	}
+
+	event.Bucket = ds.Bucket
+	event.Workspace = ds.Workspace
+	event.App = ds.App
+	event.Type = ds.Type
+	return true
+}
+
 func (event *Event) WithId() bool {
 	// only set new id it the id didn't set yet
 	if event.Id != "" {

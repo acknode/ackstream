@@ -26,8 +26,9 @@ func New(ctx context.Context) (func() error, error) {
 
 	logger := zlogger.FromContext(ctx).With("service", "datastore")
 	ctx = zlogger.WithContext(ctx, logger)
-
-	return app.UseSub(ctx, queue, UseHandler(ctx))
+	// because we don't provide a sample of event
+	// so we will listen to all event changes
+	return app.UseSub(ctx, nil, queue, UseHandler(ctx))
 }
 
 func UseHandler(ctx context.Context) xstream.SubscribeFn {

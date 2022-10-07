@@ -31,16 +31,15 @@ type Configs struct {
 
 type SubscribeFn func(e *entities.Event) error
 
-type Sub func(topic, queue string, fn SubscribeFn) (func() error, error)
+type Sub func(topic string, sample *entities.Event, queue string, fn SubscribeFn) (func() error, error)
 
 type Pub func(topic string, e *entities.Event) (string, error)
 
-func NewSubject(cfg *Configs, topic string, e *entities.Event) string {
-	// if entities is nill, that mean we want to subscribe all entitiess from the partition that entities is belong to
-	if e == nil {
+func NewSubject(cfg *Configs, topic string, sample *entities.Event) string {
+	if sample == nil {
 		return strings.Join([]string{cfg.Region, cfg.Name, topic, ">"}, ".")
 	}
-	return strings.Join([]string{cfg.Region, cfg.Name, topic, e.Workspace, e.App, e.Type}, ".")
+	return strings.Join([]string{cfg.Region, cfg.Name, topic, sample.Workspace, sample.App, sample.Type}, ".")
 }
 
 func New(ctx context.Context, cfg *Configs) (nats.JetStreamContext, *nats.Conn) {

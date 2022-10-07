@@ -38,8 +38,8 @@ func UsePub(ctx context.Context) func(ws, app, etype string, data interface{}) (
 	}
 }
 
-func UseSub(ctx context.Context, queue string, fn xstream.SubscribeFn) (func() error, error) {
+func UseSub(ctx context.Context, sample *entities.Event, queue string, fn xstream.SubscribeFn) (func() error, error) {
 	cfg := configs.FromContext(ctx)
 	sub := xstream.NewSub(ctx, cfg.XStream)
-	return sub(TOPIC_EVENTS_PUT, queue, fn)
+	return sub(TOPIC_EVENTS_PUT, sample, queue, fn)
 }

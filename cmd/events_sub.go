@@ -43,7 +43,7 @@ func NewEventsSub() *cobra.Command {
 			defer disconnect()
 
 			nowrapping, _ := cmd.Flags().GetBool("nowrapping")
-			cb, err := app.UseSub(ctx, queue, func(e *entities.Event) error {
+			cb, err := app.UseSub(ctx, nil, queue, func(e *entities.Event) error {
 				draw(e, nowrapping)
 				return nil
 			})
