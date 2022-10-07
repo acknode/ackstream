@@ -36,10 +36,30 @@ type Sub func(topic string, sample *entities.Event, queue string, fn SubscribeFn
 type Pub func(topic string, e *entities.Event) (string, error)
 
 func NewSubject(cfg *Configs, topic string, sample *entities.Event) string {
+	segments := []string{cfg.Region, cfg.Name, topic}
 	if sample == nil {
-		return strings.Join([]string{cfg.Region, cfg.Name, topic, ">"}, ".")
+		return strings.Join(append(segments, ">"), ".")
 	}
-	return strings.Join([]string{cfg.Region, cfg.Name, topic, sample.Workspace, sample.App, sample.Type}, ".")
+
+	if sample.Workspace != "" {
+		segments = append(segments, sample.Workspace)
+	} else {
+		segments = append(segments, "*")
+	}
+
+	if sample.App != "" {
+		segments = append(segments, sample.App)
+	} else {
+		segments = append(segments, "*")
+	}
+
+	if sample.Type != "" {
+		segments = append(segments, sample.Type)
+	} else {
+		segments = append(segments, "*")
+	}
+
+	return strings.Join(segments, ".")
 }
 
 func New(ctx context.Context, cfg *Configs) (nats.JetStreamContext, *nats.Conn) {
