@@ -25,11 +25,11 @@ type Event struct {
 
 func (event *Event) WithId() bool {
 	// only set new id it the id didn't set yet
-	if event.Id == "" {
-		event.Id = utils.NewId("event")
+	if event.Id != "" {
 		return false
 	}
 
+	event.Id = utils.NewId("event")
 	return true
 }
 
