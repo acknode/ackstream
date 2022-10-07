@@ -17,6 +17,7 @@ type ctxkey string
 
 const CTXKEY_CONN ctxkey = "ackstream.xstream.conn"
 const CTXKEY_STREAM ctxkey = "ackstream.xstream.stream"
+const CTXKEY_STREAM_SUBJECTS ctxkey = "ackstream.xstream.stream.subjects"
 
 var MAX_MSG_SIZE int32 = 1024
 var MAX_MSG int64 = 8192      // 8 * 1024
@@ -91,17 +92,20 @@ func New(ctx context.Context, cfg *Configs) (nats.JetStreamContext, *nats.Conn) 
 		panic(err)
 	}
 
-	subject := fmt.Sprintf("%s.%s.>", cfg.Region, cfg.Name)
-	stream, err := jsc.StreamInfo(cfg.Name)
+	subjects := []string{fmt.Sprintf("%s.%s.>", cfg.Region, cfg.Name)}
+	if s, ok := ctx.Value(CTXKEY_STREAM_SUBJECTS).([]string); ok {
+		subjects = s
+	}
 
+	stream, err := jsc.StreamInfo(cfg.Name)
 	// if stream is exist, update the subject list
 	if err == nil {
-		stream.Config.Subjects = lo.Uniq(append(stream.Config.Subjects, subject))
+		stream.Config.Subjects = lo.Uniq(append(stream.Config.Subjects, subjects...))
 		if stream, err = jsc.UpdateStream(&stream.Config); err != nil {
 			logger.Debugw(err.Error(),
 				"uri", cfg.Uri,
 				"stream_name", cfg.Name,
-				"subject", subject,
+				"subjects", subjects,
 			)
 			panic(err)
 		}
@@ -118,7 +122,7 @@ func New(ctx context.Context, cfg *Configs) (nats.JetStreamContext, *nats.Conn) 
 			MaxBytes: MAX_BYTES,
 			MaxAge:   MAX_AGE,
 
-			Subjects: []string{subject},
+			Subjects: subjects,
 		}
 		if stream, err = jsc.AddStream(&jscfg); err != nil {
 			panic(err)
@@ -129,10 +133,15 @@ func New(ctx context.Context, cfg *Configs) (nats.JetStreamContext, *nats.Conn) 
 		logger.Debugw(err.Error(),
 			"uri", cfg.Uri,
 			"stream_name", cfg.Name,
-			"subject", subject,
+			"subjects", subjects,
 		)
-		panic(errors.New("could not initialize stream successfully"))
+		panic(errors.New("could not initialize stream"))
 	}
 
+	logger.Infow("initialized stream successfully",
+		"uri", cfg.Uri,
+		"stream_name", cfg.Name,
+		"subjects", subjects,
+	)
 	return jsc, conn
 }
