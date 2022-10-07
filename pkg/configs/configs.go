@@ -94,9 +94,9 @@ func NewProvider(dirs ...string) (*viper.Viper, error) {
 
 	// pubsub
 	// set stream region to global region by default
-	provider.SetDefault("ACKSTREAM_STREAM_REGION", provider.Get("ACKSTREAM_REGION"))
 	provider.SetDefault("ACKSTREAM_STREAM_URI", "nats://127.0.0.1:4222")
 	provider.SetDefault("ACKSTREAM_STREAM_NAME", "ackstream")
+	provider.SetDefault("ACKSTREAM_STREAM_REGION", provider.Get("ACKSTREAM_REGION"))
 
 	// storage
 	provider.SetDefault("ACKSTREAM_STORAGE_HOSTS", []string{"127.0.0.1"})
