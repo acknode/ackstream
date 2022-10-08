@@ -2,11 +2,14 @@ package cmd
 
 import (
 	"context"
+	"encoding/json"
 	"log"
 	"strings"
 
 	"github.com/acknode/ackstream/app"
+	"github.com/acknode/ackstream/entities"
 	"github.com/acknode/ackstream/pkg/configs"
+	"github.com/acknode/ackstream/utils"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 )
@@ -15,7 +18,6 @@ func NewEventsPub() *cobra.Command {
 	command := &cobra.Command{
 		Use:               "pub",
 		PersistentPreRunE: Chain(),
-		Args:              cobra.ExactArgs(3),
 		Run: func(cmd *cobra.Command, args []string) {
 			logger := cmd.Context().
 				Value(CTXKEY_LOGGER).(*zap.SugaredLogger).
@@ -30,13 +32,29 @@ func NewEventsPub() *cobra.Command {
 				log.Fatal(err)
 			}
 
-			data := map[string]string{"app": "cli"}
+			maps := map[string]string{"app": "cli"}
 			for _, arg := range props {
 				kv := strings.Split(arg, "=")
-				data[kv[0]] = kv[1]
+				maps[kv[0]] = kv[1]
+			}
+			data, err := json.Marshal(maps)
+			if err != nil {
+				log.Fatal(err)
 			}
 
-			pubkey, err := pub(args[0], args[1], args[2], data)
+			sample := getSampleEvent(cmd.Flags(), true)
+			bucket, ts := utils.NewBucket(cfg.XStorage.BucketTemplate)
+			e := entities.Event{
+				Bucket:       bucket,
+				Workspace:    sample.Workspace,
+				App:          sample.App,
+				Type:         sample.Type,
+				CreationTime: ts,
+				Data:         string(data),
+			}
+			e.WithId()
+
+			pubkey, err := pub(&e)
 			if err != nil {
 				log.Fatal(err)
 			}

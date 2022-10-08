@@ -3,12 +3,12 @@ package xstream
 import (
 	"context"
 	"errors"
-	"fmt"
 	"strings"
 	"time"
 
 	"github.com/acknode/ackstream/entities"
 	"github.com/acknode/ackstream/pkg/zlogger"
+	"github.com/gosimple/slug"
 	"github.com/nats-io/nats.go"
 	"github.com/samber/lo"
 )
@@ -17,7 +17,6 @@ type ctxkey string
 
 const CTXKEY_CONN ctxkey = "ackstream.xstream.conn"
 const CTXKEY_STREAM ctxkey = "ackstream.xstream.stream"
-const CTXKEY_STREAM_SUBJECTS ctxkey = "ackstream.xstream.stream.subjects"
 
 var MAX_MSG_SIZE int32 = 1024
 var MAX_MSG int64 = 8192      // 8 * 1024
@@ -64,7 +63,12 @@ func NewSubject(cfg *Configs, topic string, sample *entities.Event) string {
 }
 
 func New(ctx context.Context, cfg *Configs) (nats.JetStreamContext, *nats.Conn) {
-	logger := zlogger.FromContext(ctx).With("pkg", "stream")
+	subjects := []string{strings.Join([]string{cfg.Region, cfg.Name, ">"}, ".")}
+	logger := zlogger.FromContext(ctx).
+		With("pkg", "xstream").
+		With("stream_uri", cfg.Uri).
+		With("stream_name", cfg.Name).
+		With("stream_subjects", subjects)
 
 	opts := []nats.Option{
 		nats.ReconnectWait(3 * time.Second),
@@ -82,39 +86,33 @@ func New(ctx context.Context, cfg *Configs) (nats.JetStreamContext, *nats.Conn) 
 
 	conn, err := nats.Connect(cfg.Uri, opts...)
 	if err != nil {
-		logger.Debugw(err.Error(), "uri", cfg.Uri)
+		logger.Debugw(err.Error())
 		panic(err)
 	}
 
 	jsc, err := conn.JetStream()
 	if err != nil {
-		logger.Debugw(err.Error(), "uri", cfg.Uri, "stream_name", cfg.Name)
+		logger.Debugw(err.Error())
 		panic(err)
 	}
 
-	subjects := []string{fmt.Sprintf("%s.%s.>", cfg.Region, cfg.Name)}
-	if s, ok := ctx.Value(CTXKEY_STREAM_SUBJECTS).([]string); ok {
-		subjects = s
-	}
-
-	stream, err := jsc.StreamInfo(cfg.Name)
+	name := strings.ReplaceAll(slug.Make(cfg.Name), "-", "_")
+	stream, err := jsc.StreamInfo(name)
 	// if stream is exist, update the subject list
 	if err == nil {
 		stream.Config.Subjects = lo.Uniq(append(stream.Config.Subjects, subjects...))
 		if stream, err = jsc.UpdateStream(&stream.Config); err != nil {
-			logger.Debugw(err.Error(),
-				"uri", cfg.Uri,
-				"stream_name", cfg.Name,
-				"subjects", subjects,
-			)
+			logger.Debugw(err.Error())
 			panic(err)
 		}
+
+		logger.Debug("updated existing stream")
 	}
 
 	// if there is no stream was created, create a new one
 	if err != nil && errors.Is(err, nats.ErrStreamNotFound) {
 		jscfg := nats.StreamConfig{
-			Name:    cfg.Name,
+			Name:    name,
 			Storage: nats.MemoryStorage,
 			// replicas > 1 not supported in non-clustered mode
 			// Replicas:  3,
@@ -127,21 +125,15 @@ func New(ctx context.Context, cfg *Configs) (nats.JetStreamContext, *nats.Conn) 
 		if stream, err = jsc.AddStream(&jscfg); err != nil {
 			panic(err)
 		}
+
+		logger.Debug("created existing stream")
 	}
 
 	if stream == nil {
-		logger.Debugw(err.Error(),
-			"uri", cfg.Uri,
-			"stream_name", cfg.Name,
-			"subjects", subjects,
-		)
-		panic(errors.New("could not initialize stream"))
+		logger.Debugw(err.Error())
+		panic(err)
 	}
 
-	logger.Infow("initialized stream successfully",
-		"uri", cfg.Uri,
-		"stream_name", cfg.Name,
-		"subjects", subjects,
-	)
+	logger.Info("initialized stream successfully")
 	return jsc, conn
 }

@@ -43,7 +43,7 @@ func NewEventsSub() *cobra.Command {
 			defer disconnect()
 
 			nowrapping, _ := cmd.Flags().GetBool("nowrapping")
-			cb, err := app.UseSub(ctx, nil, queue, func(e *entities.Event) error {
+			cb, err := app.UseSub(ctx, getSampleEvent(cmd.Flags(), false), queue, func(e *entities.Event) error {
 				draw(e, nowrapping)
 				return nil
 			})
@@ -60,8 +60,7 @@ func NewEventsSub() *cobra.Command {
 	}
 
 	command.Flags().StringP("queue", "q", os.Getenv("ACKSTREAM_STREAM_QUEUE"), "specify your queue name, NOT use production queue name")
-	command.Flags().StringArrayP("props", "p", []string{}, "message body properties")
-	command.Flags().BoolP("nowrapping", "w", false, "disable wrapping (or) row/column width restrictions")
+	command.Flags().BoolP("nowrapping", "", false, "disable wrapping (or) row/column width restrictions")
 
 	return command
 }

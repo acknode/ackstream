@@ -2,44 +2,25 @@ package app
 
 import (
 	"context"
-	"encoding/json"
 
 	"github.com/acknode/ackstream/entities"
 	"github.com/acknode/ackstream/pkg/configs"
 	"github.com/acknode/ackstream/pkg/xstream"
-	"github.com/acknode/ackstream/utils"
 )
 
-var TOPIC_EVENTS_PUT = "events.put"
+var TOPIC_EVENTS = "events"
 
-func UsePub(ctx context.Context) func(ws, app, etype string, data interface{}) (string, error) {
+func UsePub(ctx context.Context) func(e *entities.Event) (string, error) {
 	cfg := configs.FromContext(ctx)
 	pub := xstream.NewPub(ctx, cfg.XStream)
 
-	return func(ws, app, etype string, data interface{}) (string, error) {
-		bucket, ts := utils.NewBucket(cfg.XStorage.BucketTemplate)
-		encoded, err := json.Marshal(data)
-		if err != nil {
-			return "", err
-		}
-
-		e := entities.Event{
-			Bucket:    bucket,
-			Workspace: ws,
-			App:       app,
-			Type:      etype,
-
-			CreationTime: ts,
-			Data:         string(encoded),
-		}
-		e.WithId()
-
-		return pub(TOPIC_EVENTS_PUT, &e)
+	return func(e *entities.Event) (string, error) {
+		return pub(TOPIC_EVENTS, e)
 	}
 }
 
 func UseSub(ctx context.Context, sample *entities.Event, queue string, fn xstream.SubscribeFn) (func() error, error) {
 	cfg := configs.FromContext(ctx)
 	sub := xstream.NewSub(ctx, cfg.XStream)
-	return sub(TOPIC_EVENTS_PUT, sample, queue, fn)
+	return sub(TOPIC_EVENTS, sample, queue, fn)
 }

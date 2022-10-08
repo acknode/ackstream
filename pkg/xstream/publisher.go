@@ -16,11 +16,11 @@ func NewPub(ctx context.Context, cfg *Configs) Pub {
 		With("pkg", "stream").
 		With("fn", "stream.publisher")
 
-	stream, _ := FromContext(ctx)
-	return UsePub(cfg, stream, logger)
+	streamctx, _ := FromContext(ctx)
+	return UsePub(cfg, streamctx, logger)
 }
 
-func UsePub(cfg *Configs, stream nats.JetStreamContext, l *zap.SugaredLogger) Pub {
+func UsePub(cfg *Configs, streamctx nats.JetStreamContext, l *zap.SugaredLogger) Pub {
 	return func(topic string, e *entities.Event) (string, error) {
 		msg := nats.NewMsg(NewSubject(cfg, topic, e))
 		msg.Data = []byte(e.Data)
@@ -34,7 +34,7 @@ func UsePub(cfg *Configs, stream nats.JetStreamContext, l *zap.SugaredLogger) Pu
 		msg.Header.Set("AckStream-Event-Type", e.Type)
 		msg.Header.Set("AckStream-Event-Creation-Time", fmt.Sprint(e.CreationTime))
 
-		ack, err := stream.PublishMsg(msg)
+		ack, err := streamctx.PublishMsg(msg)
 		if err != nil {
 			l.Error(err.Error(), "key", e.Key())
 			return "", err

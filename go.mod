@@ -7,6 +7,7 @@ replace github.com/gocql/gocql => github.com/scylladb/gocql v1.7.2
 require (
 	github.com/dustin/go-humanize v1.0.0
 	github.com/gocql/gocql v0.0.0-00010101000000-000000000000
+	github.com/gosimple/slug v1.13.1
 	github.com/jedib0t/go-pretty/v6 v6.3.9
 	github.com/nats-io/nats.go v1.17.0
 	github.com/samber/lo v1.28.2
@@ -20,6 +21,7 @@ require (
 require (
 	github.com/fsnotify/fsnotify v1.5.4 // indirect
 	github.com/golang/snappy v0.0.3 // indirect
+	github.com/gosimple/unidecode v1.0.1 // indirect
 	github.com/hailocab/go-hostpool v0.0.0-20160125115350-e80d13ce29ed // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect

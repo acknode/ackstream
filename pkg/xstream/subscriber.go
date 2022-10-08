@@ -18,13 +18,13 @@ func NewSub(ctx context.Context, cfg *Configs) Sub {
 		With("pkg", "stream").
 		With("fn", "stream.subscriber")
 
-	stream, _ := FromContext(ctx)
+	streamctx, _ := FromContext(ctx)
 
 	return func(topic string, sample *entities.Event, queue string, fn SubscribeFn) (func() error, error) {
 		subject := NewSubject(cfg, topic, sample)
 		logger.Debugw("subscribed", "subject", subject, "queue", queue)
 
-		sub, err := stream.QueueSubscribe(subject, queue, UseSub(fn, logger), nats.DeliverLast())
+		sub, err := streamctx.QueueSubscribe(subject, queue, UseSub(fn, logger), nats.DeliverLast())
 
 		// return callback to cleanup resources
 		return func() error { return sub.Drain() }, err
