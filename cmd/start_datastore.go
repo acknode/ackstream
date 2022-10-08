@@ -4,8 +4,6 @@ import (
 	"context"
 	"errors"
 	"os"
-	"os/signal"
-	"syscall"
 
 	"github.com/acknode/ackstream/app"
 	"github.com/acknode/ackstream/pkg/configs"
@@ -45,17 +43,11 @@ func NewStartDatastore() *cobra.Command {
 			ctx = xstorage.WithContext(ctx, session)
 			logger.Debugw("load storage", "hosts", cfg.XStorage.Hosts, "keyspace", cfg.XStorage.Keyspace, "table", cfg.XStorage.Table)
 
-			cleanup, err := datastore.New(ctx)
-			if err != nil {
+			logger.Debug("load completed")
+			if err := datastore.New(ctx); err != nil {
 				logger.Error(err.Error())
 				return
 			}
-			defer cleanup()
-			logger.Debug("load completed")
-
-			quit := make(chan os.Signal, 1)
-			signal.Notify(quit, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
-			<-quit
 
 			logger.Debug("stopping")
 		},

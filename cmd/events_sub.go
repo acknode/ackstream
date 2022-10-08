@@ -41,8 +41,10 @@ func NewEventsSub() *cobra.Command {
 			cfg := cmd.Context().Value(CTXKEY_CONFIGS).(*configs.Configs)
 			ctx := app.NewContext(context.Background(), logger, cfg)
 
+			sub := app.UseSub(ctx)
+
 			nowrapping, _ := cmd.Flags().GetBool("nowrapping")
-			cleanup, err := app.UseSub(ctx, getSampleEvent(cmd.Flags(), false), queue, func(e *entities.Event) error {
+			cleanup, err := sub(getSampleEvent(cmd.Flags(), false), queue, func(e *entities.Event) error {
 				draw(e, nowrapping)
 				return nil
 			})
@@ -55,6 +57,8 @@ func NewEventsSub() *cobra.Command {
 			quit := make(chan os.Signal, 1)
 			signal.Notify(quit, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 			<-quit
+
+			logger.Info("stopped")
 		},
 	}
 
