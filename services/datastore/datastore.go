@@ -8,7 +8,6 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/acknode/ackstream/app"
 	"github.com/acknode/ackstream/entities"
 	"github.com/acknode/ackstream/pkg/configs"
 	"github.com/acknode/ackstream/pkg/xstorage"
@@ -34,16 +33,20 @@ func New(ctx context.Context) error {
 	logger := zlogger.FromContext(ctx).With("service", "datastore")
 	ctx = zlogger.WithContext(ctx, logger)
 
-	var err error
-	var cleanup func() error
 	go func() {
-		sub := app.UseSub(ctx)
-		// because we don't provide a sample of event
-		// so we will listen to all event changes
-		cleanup, err = sub(nil, queue, UseHandler(ctx))
+		sub, err := xstream.NewSub(ctx)
 		if err != nil {
 			logger.Fatal(err.Error())
 		}
+
+		// because we don't provide a sample of event
+		// so we will listen to all event changes
+		ctx, err = sub(nil, queue, UseHandler(ctx))
+		if err != nil {
+			logger.Fatal(err.Error())
+		}
+
+		logger.Debug("subscribing")
 	}()
 
 	// Listen for the interrupt signal.
@@ -54,7 +57,8 @@ func New(ctx context.Context) error {
 	// the request it is currently handling
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	if err := cleanup(); err != nil {
+
+	if err := xstream.Disconnect(ctx); err != nil {
 		logger.Fatal(err.Error())
 	}
 

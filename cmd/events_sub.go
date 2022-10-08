@@ -3,14 +3,15 @@ package cmd
 import (
 	"context"
 	"errors"
-	"log"
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/acknode/ackstream/app"
 	"github.com/acknode/ackstream/entities"
 	"github.com/acknode/ackstream/pkg/configs"
+	"github.com/acknode/ackstream/pkg/xstream"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 )
@@ -41,24 +42,39 @@ func NewEventsSub() *cobra.Command {
 			cfg := cmd.Context().Value(CTXKEY_CONFIGS).(*configs.Configs)
 			ctx := app.NewContext(context.Background(), logger, cfg)
 
-			sub := app.UseSub(ctx)
-
-			nowrapping, _ := cmd.Flags().GetBool("nowrapping")
-			cleanup, err := sub(getSampleEvent(cmd.Flags(), false), queue, func(e *entities.Event) error {
-				draw(e, nowrapping)
-				return nil
-			})
+			sub, err := xstream.NewSub(ctx)
 			if err != nil {
-				log.Fatal(err)
+				logger.Fatal(err.Error())
 			}
-			defer cleanup()
 
-			logger.Info("subscribing")
-			quit := make(chan os.Signal, 1)
-			signal.Notify(quit, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
-			<-quit
+			ctx, stop := signal.NotifyContext(ctx, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
+			defer stop()
 
-			logger.Info("stopped")
+			go func() {
+				nowrapping, _ := cmd.Flags().GetBool("nowrapping")
+				ctx, err = sub(getSampleEvent(cmd.Flags(), false), queue, func(e *entities.Event) error {
+					draw(e, nowrapping)
+					return nil
+				})
+				if err != nil {
+					logger.Fatal(err.Error())
+				}
+
+				logger.Info("subscribing")
+			}()
+
+			// Listen for the interrupt signal.
+			<-ctx.Done()
+			stop()
+			logger.Info("shutting down gracefully, press Ctrl+C again to force")
+			// The context is used to inform the server it has 5 seconds to finish
+			// the request it is currently handling
+			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
+
+			if err := xstream.Disconnect(ctx); err != nil {
+				logger.Fatal(err.Error())
+			}
 		},
 	}
 

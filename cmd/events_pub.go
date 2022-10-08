@@ -9,6 +9,7 @@ import (
 	"github.com/acknode/ackstream/app"
 	"github.com/acknode/ackstream/entities"
 	"github.com/acknode/ackstream/pkg/configs"
+	"github.com/acknode/ackstream/pkg/xstream"
 	"github.com/acknode/ackstream/utils"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
@@ -25,8 +26,14 @@ func NewEventsPub() *cobra.Command {
 			cfg := cmd.Context().Value(CTXKEY_CONFIGS).(*configs.Configs)
 			ctx := app.NewContext(context.Background(), logger, cfg)
 
-			pub, cleanup := app.UsePub(ctx)
-			defer cleanup()
+			ctx, err := xstream.Connect(ctx)
+			if err != nil {
+				log.Fatal(err)
+			}
+			pub, err := xstream.NewPub(ctx)
+			if err != nil {
+				log.Fatal(err)
+			}
 
 			props, err := cmd.Flags().GetStringArray("props")
 			if err != nil {
@@ -61,6 +68,7 @@ func NewEventsPub() *cobra.Command {
 			}
 
 			logger.Infow("published", "publish_key", pubkey)
+			xstream.Disconnect(ctx)
 		},
 	}
 

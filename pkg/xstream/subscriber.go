@@ -13,27 +13,32 @@ import (
 	"go.uber.org/zap"
 )
 
-func NewSub(ctx context.Context, cfg *Configs, topic string) Sub {
+func NewSub(ctx context.Context) (Sub, error) {
 	logger := zlogger.FromContext(ctx).
-		With("pkg", "stream").
-		With("fn", "stream.subscriber")
+		With("pkg", "xstream").
+		With("fn", "xstream.subscriber")
 
-	streamctx, _ := New(ctx, cfg, topic)
+	ctx, err := Connect(ctx)
+	if err != nil {
+		return nil, err
+	}
+	cfg, ok := CfgFromContext(ctx)
+	if !ok {
+		return nil, ErrCfgNotSet
+	}
+	jsc, ok := StreamFromContext(ctx)
+	if !ok {
+		return nil, ErrStreamNotInit
+	}
 
-	return func(sample *entities.Event, queue string, fn SubscribeFn) (func() error, error) {
-		subject := NewSubject(cfg, topic, sample)
+	return func(sample *entities.Event, queue string, fn SubscribeFn) (context.Context, error) {
+		subject := NewSubject(cfg, sample)
 		logger.Debugw("subscribed", "subject", subject, "queue", queue)
 
-		sub, err := streamctx.QueueSubscribe(subject, queue, UseSub(fn, logger), nats.DeliverLast())
+		sub, err := jsc.QueueSubscribe(subject, queue, UseSub(fn, logger), nats.DeliverLast())
 
-		// return callback to cleanup resources
-		return func() error {
-			if sub != nil {
-				return sub.Drain()
-			}
-			return nil
-		}, err
-	}
+		return SubcriptionWithContext(ctx, sub), err
+	}, nil
 }
 
 func UseSub(fn SubscribeFn, logger *zap.SugaredLogger) nats.MsgHandler {
@@ -66,4 +71,13 @@ func UseSub(fn SubscribeFn, logger *zap.SugaredLogger) nats.MsgHandler {
 
 		msg.Ack()
 	}
+}
+
+func SubcriptionWithContext(ctx context.Context, sub *nats.Subscription) context.Context {
+	return context.WithValue(ctx, CTXKEY_SUB, sub)
+}
+
+func SubcriptionFromContext(ctx context.Context) (*nats.Subscription, bool) {
+	sub, ok := ctx.Value(CTXKEY_SUB).(*nats.Subscription)
+	return sub, ok
 }

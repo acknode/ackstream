@@ -2,34 +2,28 @@ package xstream
 
 import (
 	"context"
-	"errors"
 
 	"github.com/nats-io/nats.go"
 )
 
-func WithContext(ctx context.Context, stream nats.JetStreamContext, conn *nats.Conn) context.Context {
-	ctx = context.WithValue(ctx, CTXKEY_STREAM, stream)
-	ctx = context.WithValue(ctx, CTXKEY_CONN, conn)
-	return ctx
+type ctxkey string
+
+const CTXKEY_CONN ctxkey = "xstream.conn"
+const CTXKEY_STREAM ctxkey = "xstream.stream"
+const CTXKEY_SUB ctxkey = "xstream.subscription"
+
+func ConnWithContext(ctx context.Context, conn *nats.Conn) context.Context {
+	return context.WithValue(ctx, CTXKEY_CONN, conn)
+}
+func ConnFromContext(ctx context.Context) (*nats.Conn, bool) {
+	conn, ok := ctx.Value(CTXKEY_CONN).(*nats.Conn)
+	return conn, ok
 }
 
-func FromContext(ctx context.Context) (stream nats.JetStreamContext, conn *nats.Conn) {
-	stream, ok := ctx.Value(CTXKEY_STREAM).(nats.JetStreamContext)
-	if !ok {
-		panic(errors.New("no stream was configured"))
-	}
-
-	conn, ok = ctx.Value(CTXKEY_CONN).(*nats.Conn)
-	if !ok {
-		panic(errors.New("no stream connection was configured"))
-	}
-
-	return stream, conn
+func StreamWithContext(ctx context.Context, jsc nats.JetStreamContext) context.Context {
+	return context.WithValue(ctx, CTXKEY_STREAM, jsc)
 }
-
-func InContext(ctx context.Context) bool {
-	_, hasJSC := ctx.Value(CTXKEY_STREAM).(nats.JetStreamContext)
-	_, hasConn := ctx.Value(CTXKEY_CONN).(*nats.Conn)
-
-	return hasJSC && hasConn
+func StreamFromContext(ctx context.Context) (nats.JetStreamContext, bool) {
+	jsc, ok := ctx.Value(CTXKEY_STREAM).(nats.JetStreamContext)
+	return jsc, ok
 }

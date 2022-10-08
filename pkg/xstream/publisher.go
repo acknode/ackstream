@@ -11,18 +11,26 @@ import (
 	"go.uber.org/zap"
 )
 
-func NewPub(ctx context.Context, cfg *Configs, topic string) (Pub, func() error) {
+func NewPub(ctx context.Context) (Pub, error) {
 	logger := zlogger.FromContext(ctx).
-		With("pkg", "stream").
-		With("fn", "stream.publisher")
+		With("pkg", "xstream").
+		With("fn", "xstream.publisher")
 
-	streamctx, conn := New(ctx, cfg, topic)
-	return UsePub(cfg, topic, streamctx, logger), func() error { conn.Close(); return nil }
+	cfg, ok := CfgFromContext(ctx)
+	if !ok {
+		return nil, ErrCfgNotSet
+	}
+	jsc, ok := StreamFromContext(ctx)
+	if !ok {
+		return nil, ErrStreamNotInit
+	}
+
+	return UsePub(cfg, jsc, logger), nil
 }
 
-func UsePub(cfg *Configs, topic string, streamctx nats.JetStreamContext, l *zap.SugaredLogger) Pub {
+func UsePub(cfg *Configs, streamctx nats.JetStreamContext, logger *zap.SugaredLogger) Pub {
 	return func(e *entities.Event) (string, error) {
-		msg := nats.NewMsg(NewSubject(cfg, topic, e))
+		msg := nats.NewMsg(NewSubject(cfg, e))
 		msg.Data = []byte(e.Data)
 
 		// with metadata
@@ -36,14 +44,14 @@ func UsePub(cfg *Configs, topic string, streamctx nats.JetStreamContext, l *zap.
 
 		ack, err := streamctx.PublishMsg(msg)
 		if err != nil {
-			l.Error(err.Error(), "key", e.Key())
+			logger.Error(err.Error(), "key", e.Key())
 			return "", err
 		}
 
 		keys := []string{
 			ack.Domain, ack.Stream, fmt.Sprint(ack.Sequence), e.Id,
 		}
-		l.Debugw("published", "stream_name", ack.Stream, "sequence", ack.Sequence, "key", e.Key())
+		logger.Debugw("published", "stream_name", ack.Stream, "sequence", ack.Sequence, "key", e.Key())
 		return strings.Join(keys, "/"), nil
 	}
 }
