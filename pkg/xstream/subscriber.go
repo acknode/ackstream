@@ -27,7 +27,12 @@ func NewSub(ctx context.Context, cfg *Configs, topic string) Sub {
 		sub, err := streamctx.QueueSubscribe(subject, queue, UseSub(fn, logger), nats.DeliverLast())
 
 		// return callback to cleanup resources
-		return func() error { return sub.Drain() }, err
+		return func() error {
+			if sub != nil {
+				return sub.Drain()
+			}
+			return nil
+		}, err
 	}
 }
 
