@@ -31,9 +31,9 @@ type Configs struct {
 
 type SubscribeFn func(e *entities.Event) error
 
-type Sub func(topic string, sample *entities.Event, queue string, fn SubscribeFn) (func() error, error)
+type Sub func(sample *entities.Event, queue string, fn SubscribeFn) (func() error, error)
 
-type Pub func(topic string, e *entities.Event) (string, error)
+type Pub func(e *entities.Event) (string, error)
 
 func NewSubject(cfg *Configs, topic string, sample *entities.Event) string {
 	segments := []string{cfg.Region, cfg.Name, topic}
@@ -62,8 +62,8 @@ func NewSubject(cfg *Configs, topic string, sample *entities.Event) string {
 	return strings.Join(segments, ".")
 }
 
-func New(ctx context.Context, cfg *Configs) (nats.JetStreamContext, *nats.Conn) {
-	subjects := []string{strings.Join([]string{cfg.Region, cfg.Name, ">"}, ".")}
+func New(ctx context.Context, cfg *Configs, topic string) (nats.JetStreamContext, *nats.Conn) {
+	subjects := []string{strings.Join([]string{cfg.Region, cfg.Name, topic, ">"}, ".")}
 	logger := zlogger.FromContext(ctx).
 		With("pkg", "xstream").
 		With("stream_uri", cfg.Uri).

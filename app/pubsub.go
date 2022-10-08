@@ -10,17 +10,13 @@ import (
 
 var TOPIC_EVENTS = "events"
 
-func UsePub(ctx context.Context) func(e *entities.Event) (string, error) {
+func UsePub(ctx context.Context) (xstream.Pub, func() error) {
 	cfg := configs.FromContext(ctx)
-	pub := xstream.NewPub(ctx, cfg.XStream)
-
-	return func(e *entities.Event) (string, error) {
-		return pub(TOPIC_EVENTS, e)
-	}
+	return xstream.NewPub(ctx, cfg.XStream, TOPIC_EVENTS)
 }
 
 func UseSub(ctx context.Context, sample *entities.Event, queue string, fn xstream.SubscribeFn) (func() error, error) {
 	cfg := configs.FromContext(ctx)
-	sub := xstream.NewSub(ctx, cfg.XStream)
-	return sub(TOPIC_EVENTS, sample, queue, fn)
+	sub := xstream.NewSub(ctx, cfg.XStream, TOPIC_EVENTS)
+	return sub(sample, queue, fn)
 }

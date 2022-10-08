@@ -13,14 +13,14 @@ import (
 	"go.uber.org/zap"
 )
 
-func NewSub(ctx context.Context, cfg *Configs) Sub {
+func NewSub(ctx context.Context, cfg *Configs, topic string) Sub {
 	logger := zlogger.FromContext(ctx).
 		With("pkg", "stream").
 		With("fn", "stream.subscriber")
 
-	streamctx, _ := FromContext(ctx)
+	streamctx, _ := New(ctx, cfg, topic)
 
-	return func(topic string, sample *entities.Event, queue string, fn SubscribeFn) (func() error, error) {
+	return func(sample *entities.Event, queue string, fn SubscribeFn) (func() error, error) {
 		subject := NewSubject(cfg, topic, sample)
 		logger.Debugw("subscribed", "subject", subject, "queue", queue)
 

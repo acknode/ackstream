@@ -20,8 +20,7 @@ func NewEventsGet() *cobra.Command {
 				Value(CTXKEY_LOGGER).(*zap.SugaredLogger).
 				With("service", "cli.events.get")
 			cfg := cmd.Context().Value(CTXKEY_CONFIGS).(*configs.Configs)
-			ctx, disconnect := app.NewContext(context.Background(), logger, cfg)
-			defer disconnect()
+			ctx := app.NewContext(context.Background(), logger, cfg)
 
 			session := xstorage.New(ctx, cfg.XStorage)
 			defer session.Close()

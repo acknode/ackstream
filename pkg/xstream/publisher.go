@@ -11,17 +11,17 @@ import (
 	"go.uber.org/zap"
 )
 
-func NewPub(ctx context.Context, cfg *Configs) Pub {
+func NewPub(ctx context.Context, cfg *Configs, topic string) (Pub, func() error) {
 	logger := zlogger.FromContext(ctx).
 		With("pkg", "stream").
 		With("fn", "stream.publisher")
 
-	streamctx, _ := FromContext(ctx)
-	return UsePub(cfg, streamctx, logger)
+	streamctx, conn := New(ctx, cfg, topic)
+	return UsePub(cfg, topic, streamctx, logger), func() error { conn.Close(); return nil }
 }
 
-func UsePub(cfg *Configs, streamctx nats.JetStreamContext, l *zap.SugaredLogger) Pub {
-	return func(topic string, e *entities.Event) (string, error) {
+func UsePub(cfg *Configs, topic string, streamctx nats.JetStreamContext, l *zap.SugaredLogger) Pub {
+	return func(e *entities.Event) (string, error) {
 		msg := nats.NewMsg(NewSubject(cfg, topic, e))
 		msg.Data = []byte(e.Data)
 

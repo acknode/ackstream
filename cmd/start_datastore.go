@@ -34,8 +34,7 @@ func NewStartDatastore() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			logger := cmd.Context().Value(CTXKEY_LOGGER).(*zap.SugaredLogger)
 			cfg := cmd.Context().Value(CTXKEY_CONFIGS).(*configs.Configs)
-			ctx, disconnect := app.NewContext(context.Background(), logger, cfg)
-			defer disconnect()
+			ctx := app.NewContext(context.Background(), logger, cfg)
 
 			queue, _ := cmd.Flags().GetString("queue")
 			ctx = context.WithValue(ctx, datastore.CTXKEY_QUEUE_NAME, queue)

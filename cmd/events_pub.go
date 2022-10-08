@@ -23,10 +23,11 @@ func NewEventsPub() *cobra.Command {
 				Value(CTXKEY_LOGGER).(*zap.SugaredLogger).
 				With("service", "cli.events.publisher")
 			cfg := cmd.Context().Value(CTXKEY_CONFIGS).(*configs.Configs)
-			ctx, disconnect := app.NewContext(context.Background(), logger, cfg)
-			defer disconnect()
+			ctx := app.NewContext(context.Background(), logger, cfg)
 
-			pub := app.UsePub(ctx)
+			pub, cleanup := app.UsePub(ctx)
+			defer cleanup()
+
 			props, err := cmd.Flags().GetStringArray("props")
 			if err != nil {
 				log.Fatal(err)

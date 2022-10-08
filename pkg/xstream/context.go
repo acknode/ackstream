@@ -26,3 +26,10 @@ func FromContext(ctx context.Context) (stream nats.JetStreamContext, conn *nats.
 
 	return stream, conn
 }
+
+func InContext(ctx context.Context) bool {
+	_, hasJSC := ctx.Value(CTXKEY_STREAM).(nats.JetStreamContext)
+	_, hasConn := ctx.Value(CTXKEY_CONN).(*nats.Conn)
+
+	return hasJSC && hasConn
+}
