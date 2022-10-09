@@ -7,7 +7,6 @@ import (
 
 	"github.com/acknode/ackstream/app"
 	"github.com/acknode/ackstream/pkg/configs"
-	"github.com/acknode/ackstream/pkg/xstorage"
 	"github.com/acknode/ackstream/services/datastore"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
@@ -38,15 +37,9 @@ func NewStartDatastore() *cobra.Command {
 			ctx = context.WithValue(ctx, datastore.CTXKEY_QUEUE_NAME, queue)
 			logger.Debugw("load queue", "queue", queue)
 
-			session := xstorage.New(ctx, cfg.XStorage)
-			defer session.Close()
-			ctx = xstorage.WithContext(ctx, session)
-			logger.Debugw("load storage", "hosts", cfg.XStorage.Hosts, "keyspace", cfg.XStorage.Keyspace, "table", cfg.XStorage.Table)
-
 			logger.Debug("load completed")
 			if err := datastore.New(ctx); err != nil {
-				logger.Error(err.Error())
-				return
+				logger.Fatal(err.Error())
 			}
 
 			logger.Debug("stopping")

@@ -42,6 +42,11 @@ func NewEventsSub() *cobra.Command {
 			cfg := cmd.Context().Value(CTXKEY_CONFIGS).(*configs.Configs)
 			ctx := app.NewContext(context.Background(), logger, cfg)
 
+			ctx, err := xstream.Connect(ctx)
+			if err != nil {
+				logger.Fatal(err)
+			}
+
 			sub, err := xstream.NewSub(ctx)
 			if err != nil {
 				logger.Fatal(err.Error())
@@ -69,7 +74,7 @@ func NewEventsSub() *cobra.Command {
 			logger.Info("shutting down gracefully, press Ctrl+C again to force")
 			// The context is used to inform the server it has 5 seconds to finish
 			// the request it is currently handling
-			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 			defer cancel()
 
 			if err := xstream.Disconnect(ctx); err != nil {

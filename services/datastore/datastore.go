@@ -33,15 +33,30 @@ func New(ctx context.Context) error {
 	logger := zlogger.FromContext(ctx).With("service", "datastore")
 	ctx = zlogger.WithContext(ctx, logger)
 
+	ctx, err := xstream.Connect(ctx)
+	if err != nil {
+		return err
+	}
+
+	ctx, err = xstorage.Connect(ctx)
+	if err != nil {
+		return err
+	}
+
 	go func() {
 		sub, err := xstream.NewSub(ctx)
 		if err != nil {
 			logger.Fatal(err.Error())
 		}
 
+		handler, err := UseHandler(ctx)
+		if err != nil {
+			logger.Fatal(err.Error())
+		}
+
 		// because we don't provide a sample of event
 		// so we will listen to all event changes
-		ctx, err = sub(nil, queue, UseHandler(ctx))
+		ctx, err = sub(nil, queue, handler)
 		if err != nil {
 			logger.Fatal(err.Error())
 		}
@@ -55,23 +70,30 @@ func New(ctx context.Context) error {
 	logger.Info("shutting down gracefully, press Ctrl+C again to force")
 	// The context is used to inform the server it has 5 seconds to finish
 	// the request it is currently handling
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 
 	if err := xstream.Disconnect(ctx); err != nil {
-		logger.Fatal(err.Error())
+		return err
+	}
+
+	if err := xstorage.Disconnect(ctx); err != nil {
+		return err
 	}
 
 	return nil
 }
 
-func UseHandler(ctx context.Context) xstream.SubscribeFn {
+func UseHandler(ctx context.Context) (xstream.SubscribeFn, error) {
 	cfg := configs.FromContext(ctx)
 	logger := zlogger.FromContext(ctx)
-	put := xstorage.UsePut(ctx, cfg.XStorage)
+	put, err := xstorage.UsePut(ctx, cfg.XStorage)
+	if err != nil {
+		return nil, err
+	}
 
 	return func(e *entities.Event) error {
 		logger.Debugw("got entities", "key", e.Key())
 		return put(e)
-	}
+	}, nil
 }

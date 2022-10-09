@@ -28,8 +28,10 @@ func NewEventsPub() *cobra.Command {
 
 			ctx, err := xstream.Connect(ctx)
 			if err != nil {
-				log.Fatal(err)
+				logger.Fatal(err)
 			}
+			defer xstream.Disconnect(ctx)
+
 			pub, err := xstream.NewPub(ctx)
 			if err != nil {
 				log.Fatal(err)

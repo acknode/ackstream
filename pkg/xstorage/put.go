@@ -9,11 +9,18 @@ import (
 	"github.com/acknode/ackstream/pkg/zlogger"
 )
 
-func UsePut(ctx context.Context, cfg *Configs) func(e *entities.Event) error {
+type Put func(e *entities.Event) error
+
+func UsePut(ctx context.Context, cfg *Configs) (Put, error) {
 	logger := zlogger.FromContext(ctx).With("pkg", "storage", "fn", "storage.put")
-	session := FromContext(ctx)
+	session, ok := ConnFromContext(ctx)
+	if !ok {
+		return nil, ErrConnNotInit
+	}
 
 	return func(e *entities.Event) error {
+		// @TODO: validate event
+
 		ql := fmt.Sprintf("INSERT INTO %s (bucket, workspace, app, type, id, data, creation_time) VALUES (?, ?, ?, ?, ?, ?, ?)", cfg.Table)
 
 		// because we will set entities.Data type to interface{}, so we need to encode it as string when we insert to database
@@ -25,5 +32,5 @@ func UsePut(ctx context.Context, cfg *Configs) func(e *entities.Event) error {
 		logger.Debugw("upsert entities", "ql", ql, "key", e.Key(), "data_length", len(data))
 
 		return query.Exec()
-	}
+	}, nil
 }

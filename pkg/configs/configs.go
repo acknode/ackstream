@@ -94,18 +94,19 @@ func NewProvider(dirs ...string) (*viper.Viper, error) {
 
 	// pubsub
 	// set stream region to global region by default
-	provider.SetDefault("ACKSTREAM_STREAM_URI", "nats://127.0.0.1:4222")
-	provider.SetDefault("ACKSTREAM_STREAM_NAME", "ackstream")
-	provider.SetDefault("ACKSTREAM_STREAM_REGION", provider.Get("ACKSTREAM_REGION"))
+	provider.SetDefault("ACKSTREAM_XSTREAM_URI", "nats://127.0.0.1:4222")
+	provider.SetDefault("ACKSTREAM_XSTREAM_NAME", "ackstream")
+	provider.SetDefault("ACKSTREAM_XSTREAM_REGION", provider.Get("ACKSTREAM_REGION"))
+	provider.SetDefault("ACKSTREAM_XSTREAM_TOPIC", "events")
 	provider.SetDefault("ACKSTREAM_XSTREAM_MAX_MSG", 8192)      // 8 * 1024
 	provider.SetDefault("ACKSTREAM_XSTREAM_MAX_BYTES", 8388608) // 8 * 1024 * 1024
 	provider.SetDefault("ACKSTREAM_XSTREAM_MAX_AGE", 1)         // hours
 
 	// storage
-	provider.SetDefault("ACKSTREAM_STORAGE_HOSTS", []string{"127.0.0.1"})
-	provider.SetDefault("ACKSTREAM_STORAGE_KEYSPACE", "ackstream")
-	provider.SetDefault("ACKSTREAM_STORAGE_TABLE", "events")
-	provider.SetDefault("ACKSTREAM_STORAGE_BUCKET_TEMPLATE", "20060102")
+	provider.SetDefault("ACKSTREAM_XSTORAGE_HOSTS", []string{"127.0.0.1"})
+	provider.SetDefault("ACKSTREAM_XSTORAGE_KEYSPACE", "ackstream")
+	provider.SetDefault("ACKSTREAM_XSTORAGE_TABLE", "events")
+	provider.SetDefault("ACKSTREAM_XSTORAGE_BUCKET_TEMPLATE", "20060102")
 
 	return provider, nil
 }

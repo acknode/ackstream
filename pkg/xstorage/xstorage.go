@@ -2,23 +2,17 @@ package xstorage
 
 import (
 	"context"
-	"errors"
 
+	"github.com/acknode/ackstream/pkg/zlogger"
 	"github.com/gocql/gocql"
 )
 
-type ctxkey string
+func NewConnection(ctx context.Context) (*gocql.Session, error) {
+	cfg, ok := CfgFromContext(ctx)
+	if !ok {
+		return nil, ErrCfgNotSet
+	}
 
-const CTXKEY_SESSION ctxkey = "ackstream.storage.session"
-
-type Configs struct {
-	Hosts          []string `json:"hosts" mapstructure:"ACKSTREAM_STORAGE_HOSTS"`
-	Keyspace       string   `json:"keyspace" mapstructure:"ACKSTREAM_STORAGE_KEYSPACE"`
-	Table          string   `json:"table" mapstructure:"ACKSTREAM_STORAGE_TABLE"`
-	BucketTemplate string   `json:"bucket_template" mapstructure:"ACKSTREAM_STORAGE_BUCKET_TEMPLATE"`
-}
-
-func New(ctx context.Context, cfg *Configs) *gocql.Session {
 	cluster := gocql.NewCluster(cfg.Hosts...)
 	cluster.Keyspace = cfg.Keyspace
 
@@ -27,18 +21,51 @@ func New(ctx context.Context, cfg *Configs) *gocql.Session {
 		panic(err)
 	}
 
-	return session
+	return session, nil
 }
 
-func WithContext(ctx context.Context, session *gocql.Session) context.Context {
-	return context.WithValue(ctx, CTXKEY_SESSION, session)
-}
-
-func FromContext(ctx context.Context) *gocql.Session {
-	session, ok := ctx.Value(CTXKEY_SESSION).(*gocql.Session)
+func Connect(ctx context.Context) (context.Context, error) {
+	cfg, ok := CfgFromContext(ctx)
 	if !ok {
-		panic(errors.New("no storage session was configured"))
+		return ctx, ErrCfgNotSet
 	}
 
-	return session
+	logger := zlogger.FromContext(ctx).
+		With("pkg", "xstorage").
+		With("xstorages.uri", cfg.Hosts).
+		With("xstorages.keyspace", cfg.Keyspace).
+		With("xstorages.table", cfg.Table).
+		With("xstorages.bucket_template", cfg.BucketTemplate)
+
+	xstoragectx := zlogger.WithContext(ctx, logger)
+	conn, err := NewConnection(xstoragectx)
+	if err != nil {
+		logger.Debugw(err.Error())
+		return ctx, err
+	}
+	ctx = ConnWithContext(ctx, conn)
+	logger.Info("initialized connection successfully")
+
+	return ctx, nil
+}
+
+func Disconnect(ctx context.Context) error {
+	cfg, ok := CfgFromContext(ctx)
+	if !ok {
+		return ErrCfgNotSet
+	}
+
+	logger := zlogger.FromContext(ctx).
+		With("pkg", "xstorage").
+		With("xstorages.uri", cfg.Hosts).
+		With("xstorages.keyspace", cfg.Keyspace).
+		With("xstorages.table", cfg.Table).
+		With("xstorages.bucket_template", cfg.BucketTemplate)
+
+	if conn, ok := ConnFromContext(ctx); ok {
+		conn.Close()
+		logger.Info("close connection successfully")
+	}
+
+	return nil
 }

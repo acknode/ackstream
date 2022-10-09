@@ -23,12 +23,44 @@ type Sub func(sample *entities.Event, queue string, fn SubscribeFn) (context.Con
 
 type Pub func(e *entities.Event) (string, error)
 
+func NewSubject(cfg *Configs, sample *entities.Event) string {
+	segments := []string{cfg.Region, cfg.Name, cfg.Topic}
+	if sample == nil {
+		return strings.Join(append(segments, ">"), ".")
+	}
+
+	if sample.Workspace != "" {
+		segments = append(segments, sample.Workspace)
+	} else {
+		segments = append(segments, "*")
+	}
+
+	if sample.App != "" {
+		segments = append(segments, sample.App)
+	} else {
+		segments = append(segments, "*")
+	}
+
+	if sample.Type != "" {
+		segments = append(segments, sample.Type)
+	} else {
+		segments = append(segments, "*")
+	}
+
+	return strings.Join(segments, ".")
+}
+
 func NewConnection(ctx context.Context) (*nats.Conn, error) {
 	cfg, ok := CfgFromContext(ctx)
 	if !ok {
 		return nil, ErrCfgNotSet
 	}
-	logger := zlogger.FromContext(ctx)
+	logger := zlogger.FromContext(ctx).
+		With("pkg", "xstream").
+		With("xstream.uri", cfg.Uri).
+		With("xstream.region", cfg.Region).
+		With("xstream.name", cfg.Name).
+		With("xstream.topic", cfg.Topic)
 
 	opts := []nats.Option{
 		nats.ReconnectWait(3 * time.Second),
@@ -52,9 +84,13 @@ func NewJetStream(ctx context.Context) (nats.JetStreamContext, error) {
 	if !ok {
 		return nil, ErrCfgNotSet
 	}
-	subject := strings.Join([]string{cfg.Region, cfg.Name, cfg.Topic, ">"}, ".")
-	subjects := []string{subject}
+	subjects := []string{NewSubject(cfg, nil)}
 	logger := zlogger.FromContext(ctx).
+		With("pkg", "xstream").
+		With("xstream.uri", cfg.Uri).
+		With("xstream.region", cfg.Region).
+		With("xstream.name", cfg.Name).
+		With("xstream.topic", cfg.Topic).
 		With("xstream.subjects", subjects)
 
 	conn, ok := ConnFromContext(ctx)
@@ -102,33 +138,6 @@ func NewJetStream(ctx context.Context) (nats.JetStreamContext, error) {
 	return jsc, err
 }
 
-func NewSubject(cfg *Configs, sample *entities.Event) string {
-	segments := []string{cfg.Region, cfg.Name, cfg.Topic}
-	if sample == nil {
-		return strings.Join(append(segments, ">"), ".")
-	}
-
-	if sample.Workspace != "" {
-		segments = append(segments, sample.Workspace)
-	} else {
-		segments = append(segments, "*")
-	}
-
-	if sample.App != "" {
-		segments = append(segments, sample.App)
-	} else {
-		segments = append(segments, "*")
-	}
-
-	if sample.Type != "" {
-		segments = append(segments, sample.Type)
-	} else {
-		segments = append(segments, "*")
-	}
-
-	return strings.Join(segments, ".")
-}
-
 func Connect(ctx context.Context) (context.Context, error) {
 	cfg, ok := CfgFromContext(ctx)
 	if !ok {
@@ -136,13 +145,13 @@ func Connect(ctx context.Context) (context.Context, error) {
 	}
 
 	logger := zlogger.FromContext(ctx).
+		With("pkg", "xstream").
 		With("xstream.uri", cfg.Uri).
 		With("xstream.region", cfg.Region).
 		With("xstream.name", cfg.Name).
 		With("xstream.topic", cfg.Topic)
 
-	xstreamctx := zlogger.WithContext(ctx, logger)
-	conn, err := NewConnection(xstreamctx)
+	conn, err := NewConnection(ctx)
 	if err != nil {
 		logger.Debugw(err.Error())
 		return ctx, err
@@ -150,7 +159,7 @@ func Connect(ctx context.Context) (context.Context, error) {
 	ctx = ConnWithContext(ctx, conn)
 	logger.Info("initialized connection successfully")
 
-	jsc, err := NewJetStream(xstreamctx)
+	jsc, err := NewJetStream(ctx)
 	if err != nil {
 		logger.Debugw(err.Error())
 		return ctx, err
@@ -163,7 +172,17 @@ func Connect(ctx context.Context) (context.Context, error) {
 }
 
 func Disconnect(ctx context.Context) error {
-	logger := zlogger.FromContext(ctx)
+	cfg, ok := CfgFromContext(ctx)
+	if !ok {
+		return ErrCfgNotSet
+	}
+
+	logger := zlogger.FromContext(ctx).
+		With("pkg", "xstream").
+		With("xstream.uri", cfg.Uri).
+		With("xstream.region", cfg.Region).
+		With("xstream.name", cfg.Name).
+		With("xstream.topic", cfg.Topic)
 
 	if conn, ok := ConnFromContext(ctx); ok {
 		conn.Drain()
