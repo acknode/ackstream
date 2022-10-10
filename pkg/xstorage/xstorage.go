@@ -7,29 +7,14 @@ import (
 	"github.com/gocql/gocql"
 )
 
-func NewConnection(ctx context.Context) (*gocql.Session, error) {
-	cfg, ok := CfgFromContext(ctx)
-	if !ok {
-		return nil, ErrCfgNotSet
-	}
-
+func NewConnection(ctx context.Context, cfg *Configs) (*gocql.Session, error) {
 	cluster := gocql.NewCluster(cfg.Hosts...)
 	cluster.Keyspace = cfg.Keyspace
 
-	session, err := cluster.CreateSession()
-	if err != nil {
-		panic(err)
-	}
-
-	return session, nil
+	return cluster.CreateSession()
 }
 
-func Connect(ctx context.Context) (context.Context, error) {
-	cfg, ok := CfgFromContext(ctx)
-	if !ok {
-		return ctx, ErrCfgNotSet
-	}
-
+func Connect(ctx context.Context, cfg *Configs) (context.Context, error) {
 	logger := zlogger.FromContext(ctx).
 		With("pkg", "xstorage").
 		With("xstorages.uri", cfg.Hosts).
@@ -37,8 +22,7 @@ func Connect(ctx context.Context) (context.Context, error) {
 		With("xstorages.table", cfg.Table).
 		With("xstorages.bucket_template", cfg.BucketTemplate)
 
-	xstoragectx := zlogger.WithContext(ctx, logger)
-	conn, err := NewConnection(xstoragectx)
+	conn, err := NewConnection(ctx, cfg)
 	if err != nil {
 		logger.Debugw(err.Error())
 		return ctx, err
@@ -49,12 +33,7 @@ func Connect(ctx context.Context) (context.Context, error) {
 	return ctx, nil
 }
 
-func Disconnect(ctx context.Context) error {
-	cfg, ok := CfgFromContext(ctx)
-	if !ok {
-		return ErrCfgNotSet
-	}
-
+func Disconnect(ctx context.Context, cfg *Configs) error {
 	logger := zlogger.FromContext(ctx).
 		With("pkg", "xstorage").
 		With("xstorages.uri", cfg.Hosts).

@@ -11,15 +11,11 @@ import (
 	"go.uber.org/zap"
 )
 
-func NewPub(ctx context.Context) (Pub, error) {
+func NewPub(ctx context.Context, cfg *Configs) (Pub, error) {
 	logger := zlogger.FromContext(ctx).
 		With("pkg", "xstream").
 		With("fn", "xstream.publisher")
 
-	cfg, ok := CfgFromContext(ctx)
-	if !ok {
-		return nil, ErrCfgNotSet
-	}
 	jsc, ok := StreamFromContext(ctx)
 	if !ok {
 		return nil, ErrStreamNotInit

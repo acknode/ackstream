@@ -38,7 +38,7 @@ func NewStartDatastore() *cobra.Command {
 			logger.Debugw("load queue", "queue", queue)
 
 			logger.Debug("load completed")
-			if err := datastore.New(ctx); err != nil {
+			if err := datastore.New(ctx, cfg); err != nil {
 				logger.Fatal(err.Error())
 			}
 

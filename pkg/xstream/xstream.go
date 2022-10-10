@@ -50,11 +50,7 @@ func NewSubject(cfg *Configs, sample *entities.Event) string {
 	return strings.Join(segments, ".")
 }
 
-func NewConnection(ctx context.Context) (*nats.Conn, error) {
-	cfg, ok := CfgFromContext(ctx)
-	if !ok {
-		return nil, ErrCfgNotSet
-	}
+func NewConnection(ctx context.Context, cfg *Configs) (*nats.Conn, error) {
 	logger := zlogger.FromContext(ctx).
 		With("pkg", "xstream").
 		With("xstream.uri", cfg.Uri).
@@ -79,11 +75,7 @@ func NewConnection(ctx context.Context) (*nats.Conn, error) {
 	return nats.Connect(cfg.Uri, opts...)
 }
 
-func NewJetStream(ctx context.Context) (nats.JetStreamContext, error) {
-	cfg, ok := CfgFromContext(ctx)
-	if !ok {
-		return nil, ErrCfgNotSet
-	}
+func NewJetStream(ctx context.Context, cfg *Configs) (nats.JetStreamContext, error) {
 	subjects := []string{NewSubject(cfg, nil)}
 	logger := zlogger.FromContext(ctx).
 		With("pkg", "xstream").
@@ -138,12 +130,7 @@ func NewJetStream(ctx context.Context) (nats.JetStreamContext, error) {
 	return jsc, err
 }
 
-func Connect(ctx context.Context) (context.Context, error) {
-	cfg, ok := CfgFromContext(ctx)
-	if !ok {
-		return ctx, ErrCfgNotSet
-	}
-
+func Connect(ctx context.Context, cfg *Configs) (context.Context, error) {
 	logger := zlogger.FromContext(ctx).
 		With("pkg", "xstream").
 		With("xstream.uri", cfg.Uri).
@@ -151,7 +138,7 @@ func Connect(ctx context.Context) (context.Context, error) {
 		With("xstream.name", cfg.Name).
 		With("xstream.topic", cfg.Topic)
 
-	conn, err := NewConnection(ctx)
+	conn, err := NewConnection(ctx, cfg)
 	if err != nil {
 		logger.Debugw(err.Error())
 		return ctx, err
@@ -159,7 +146,7 @@ func Connect(ctx context.Context) (context.Context, error) {
 	ctx = ConnWithContext(ctx, conn)
 	logger.Info("initialized connection successfully")
 
-	jsc, err := NewJetStream(ctx)
+	jsc, err := NewJetStream(ctx, cfg)
 	if err != nil {
 		logger.Debugw(err.Error())
 		return ctx, err
@@ -171,12 +158,7 @@ func Connect(ctx context.Context) (context.Context, error) {
 	return ctx, nil
 }
 
-func Disconnect(ctx context.Context) error {
-	cfg, ok := CfgFromContext(ctx)
-	if !ok {
-		return ErrCfgNotSet
-	}
-
+func Disconnect(ctx context.Context, cfg *Configs) error {
 	logger := zlogger.FromContext(ctx).
 		With("pkg", "xstream").
 		With("xstream.uri", cfg.Uri).

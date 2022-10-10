@@ -26,13 +26,13 @@ func NewEventsPub() *cobra.Command {
 			cfg := cmd.Context().Value(CTXKEY_CONFIGS).(*configs.Configs)
 			ctx := app.NewContext(context.Background(), logger, cfg)
 
-			ctx, err := xstream.Connect(ctx)
+			ctx, err := xstream.Connect(ctx, cfg.XStream)
 			if err != nil {
 				logger.Fatal(err)
 			}
-			defer xstream.Disconnect(ctx)
+			defer xstream.Disconnect(ctx, cfg.XStream)
 
-			pub, err := xstream.NewPub(ctx)
+			pub, err := xstream.NewPub(ctx, cfg.XStream)
 			if err != nil {
 				log.Fatal(err)
 			}
@@ -54,7 +54,7 @@ func NewEventsPub() *cobra.Command {
 
 			sample := getSampleEvent(cmd.Flags(), true)
 			bucket, ts := utils.NewBucket(cfg.XStorage.BucketTemplate)
-			e := entities.Event{
+			event := entities.Event{
 				Bucket:       bucket,
 				Workspace:    sample.Workspace,
 				App:          sample.App,
@@ -62,15 +62,15 @@ func NewEventsPub() *cobra.Command {
 				CreationTime: ts,
 				Data:         string(data),
 			}
-			e.WithId()
+			event.WithId()
 
-			pubkey, err := pub(&e)
+			pubkey, err := pub(&event)
 			if err != nil {
 				log.Fatal(err)
 			}
 
 			logger.Infow("published", "publish_key", pubkey)
-			xstream.Disconnect(ctx)
+			xstream.Disconnect(ctx, cfg.XStream)
 		},
 	}
 

@@ -13,19 +13,11 @@ import (
 	"go.uber.org/zap"
 )
 
-func NewSub(ctx context.Context) (Sub, error) {
+func NewSub(ctx context.Context, cfg *Configs) (Sub, error) {
 	logger := zlogger.FromContext(ctx).
 		With("pkg", "xstream").
 		With("fn", "xstream.subscriber")
 
-	ctx, err := Connect(ctx)
-	if err != nil {
-		return nil, err
-	}
-	cfg, ok := CfgFromContext(ctx)
-	if !ok {
-		return nil, ErrCfgNotSet
-	}
 	jsc, ok := StreamFromContext(ctx)
 	if !ok {
 		return nil, ErrStreamNotInit

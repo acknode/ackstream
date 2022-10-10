@@ -21,7 +21,7 @@ const CTXKEY_QUEUE_NAME ctxkey = "ackstream.services.datastore.queue_name"
 
 var ErrNoQueue = errors.New("stream queue name could not be empty")
 
-func New(ctx context.Context) error {
+func New(ctx context.Context, cfg *configs.Configs) error {
 	queue, ok := ctx.Value(CTXKEY_QUEUE_NAME).(string)
 	if !ok {
 		return ErrNoQueue
@@ -33,23 +33,23 @@ func New(ctx context.Context) error {
 	logger := zlogger.FromContext(ctx).With("service", "datastore")
 	ctx = zlogger.WithContext(ctx, logger)
 
-	ctx, err := xstream.Connect(ctx)
+	ctx, err := xstream.Connect(ctx, cfg.XStream)
 	if err != nil {
 		return err
 	}
 
-	ctx, err = xstorage.Connect(ctx)
+	ctx, err = xstorage.Connect(ctx, cfg.XStorage)
 	if err != nil {
 		return err
 	}
 
 	go func() {
-		sub, err := xstream.NewSub(ctx)
+		sub, err := xstream.NewSub(ctx, cfg.XStream)
 		if err != nil {
 			logger.Fatal(err.Error())
 		}
 
-		handler, err := UseHandler(ctx)
+		handler, err := UseHandler(ctx, cfg)
 		if err != nil {
 			logger.Fatal(err.Error())
 		}
@@ -73,19 +73,18 @@ func New(ctx context.Context) error {
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 
-	if err := xstream.Disconnect(ctx); err != nil {
+	if err := xstream.Disconnect(ctx, cfg.XStream); err != nil {
 		return err
 	}
 
-	if err := xstorage.Disconnect(ctx); err != nil {
+	if err := xstorage.Disconnect(ctx, cfg.XStorage); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func UseHandler(ctx context.Context) (xstream.SubscribeFn, error) {
-	cfg := configs.FromContext(ctx)
+func UseHandler(ctx context.Context, cfg *configs.Configs) (xstream.SubscribeFn, error) {
 	logger := zlogger.FromContext(ctx)
 	put, err := xstorage.UsePut(ctx, cfg.XStorage)
 	if err != nil {

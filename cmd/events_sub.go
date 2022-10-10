@@ -42,12 +42,12 @@ func NewEventsSub() *cobra.Command {
 			cfg := cmd.Context().Value(CTXKEY_CONFIGS).(*configs.Configs)
 			ctx := app.NewContext(context.Background(), logger, cfg)
 
-			ctx, err := xstream.Connect(ctx)
+			ctx, err := xstream.Connect(ctx, cfg.XStream)
 			if err != nil {
 				logger.Fatal(err)
 			}
 
-			sub, err := xstream.NewSub(ctx)
+			sub, err := xstream.NewSub(ctx, cfg.XStream)
 			if err != nil {
 				logger.Fatal(err.Error())
 			}
@@ -77,7 +77,7 @@ func NewEventsSub() *cobra.Command {
 			ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 			defer cancel()
 
-			if err := xstream.Disconnect(ctx); err != nil {
+			if err := xstream.Disconnect(ctx, cfg.XStream); err != nil {
 				logger.Fatal(err.Error())
 			}
 		},
