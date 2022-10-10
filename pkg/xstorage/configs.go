@@ -1,7 +1,5 @@
 package xstorage
 
-const CTXKEY_CFG ctxkey = "xstorage.cfg"
-
 type Configs struct {
 	Hosts          []string `json:"hosts" mapstructure:"ACKSTREAM_XSTORAGE_HOSTS"`
 	Keyspace       string   `json:"keyspace" mapstructure:"ACKSTREAM_XSTORAGE_KEYSPACE"`

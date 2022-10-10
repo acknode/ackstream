@@ -19,7 +19,7 @@ var MAX_AGE time.Duration = 3 * time.Hour
 
 type SubscribeFn func(e *entities.Event) error
 
-type Sub func(sample *entities.Event, queue string, fn SubscribeFn) (context.Context, error)
+type Sub func(sample *entities.Event, queue string, fn SubscribeFn) error
 
 type Pub func(e *entities.Event) (string, error)
 
@@ -75,7 +75,7 @@ func NewConnection(ctx context.Context, cfg *Configs) (*nats.Conn, error) {
 	return nats.Connect(cfg.Uri, opts...)
 }
 
-func NewJetStream(ctx context.Context, cfg *Configs) (nats.JetStreamContext, error) {
+func NewJetStream(ctx context.Context, cfg *Configs, conn *nats.Conn) (nats.JetStreamContext, error) {
 	subjects := []string{NewSubject(cfg, nil)}
 	logger := zlogger.FromContext(ctx).
 		With("pkg", "xstream").
@@ -84,11 +84,6 @@ func NewJetStream(ctx context.Context, cfg *Configs) (nats.JetStreamContext, err
 		With("xstream.name", cfg.Name).
 		With("xstream.topic", cfg.Topic).
 		With("xstream.subjects", subjects)
-
-	conn, ok := ConnFromContext(ctx)
-	if !ok {
-		return nil, ErrConnNotInit
-	}
 
 	jsc, err := conn.JetStream()
 	if err != nil {
@@ -128,55 +123,4 @@ func NewJetStream(ctx context.Context, cfg *Configs) (nats.JetStreamContext, err
 	}
 
 	return jsc, err
-}
-
-func Connect(ctx context.Context, cfg *Configs) (context.Context, error) {
-	logger := zlogger.FromContext(ctx).
-		With("pkg", "xstream").
-		With("xstream.uri", cfg.Uri).
-		With("xstream.region", cfg.Region).
-		With("xstream.name", cfg.Name).
-		With("xstream.topic", cfg.Topic)
-
-	conn, err := NewConnection(ctx, cfg)
-	if err != nil {
-		logger.Debugw(err.Error())
-		return ctx, err
-	}
-	ctx = ConnWithContext(ctx, conn)
-	logger.Info("initialized connection successfully")
-
-	jsc, err := NewJetStream(ctx, cfg)
-	if err != nil {
-		logger.Debugw(err.Error())
-		return ctx, err
-	}
-
-	ctx = StreamWithContext(ctx, jsc)
-	logger.Info("initialized stream successfully")
-
-	return ctx, nil
-}
-
-func Disconnect(ctx context.Context, cfg *Configs) error {
-	logger := zlogger.FromContext(ctx).
-		With("pkg", "xstream").
-		With("xstream.uri", cfg.Uri).
-		With("xstream.region", cfg.Region).
-		With("xstream.name", cfg.Name).
-		With("xstream.topic", cfg.Topic)
-
-	if conn, ok := ConnFromContext(ctx); ok {
-		conn.Drain()
-		logger.Info("drain connection successfully")
-	}
-
-	if subscription, ok := SubcriptionFromContext(ctx); ok {
-		if err := subscription.Drain(); err != nil {
-			return err
-		}
-		logger.Info("drain subscription successfully")
-	}
-
-	return nil
 }

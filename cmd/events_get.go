@@ -23,14 +23,13 @@ func NewEventsGet() *cobra.Command {
 			cfg := cmd.Context().Value(CTXKEY_CONFIGS).(*configs.Configs)
 			ctx := app.NewContext(context.Background(), logger, cfg)
 
-			ctx, err := xstorage.Connect(ctx, cfg.XStorage)
+			session, err := xstorage.New(ctx, cfg.XStorage)
 			if err != nil {
 				logger.Fatal(err.Error())
 			}
-			logger.Debugw("load storage", "hosts", cfg.XStorage.Hosts, "keyspace", cfg.XStorage.Keyspace, "table", cfg.XStorage.Table)
-			defer xstorage.Disconnect(ctx, cfg.XStorage)
+			defer session.Close()
 
-			get, err := xstorage.UseGet(ctx, cfg.XStorage)
+			get, err := xstorage.UseGet(ctx, cfg.XStorage, session)
 			if err != nil {
 				logger.Fatal(err.Error())
 			}

@@ -42,26 +42,23 @@ func NewEventsSub() *cobra.Command {
 			cfg := cmd.Context().Value(CTXKEY_CONFIGS).(*configs.Configs)
 			ctx := app.NewContext(context.Background(), logger, cfg)
 
-			ctx, err := xstream.Connect(ctx, cfg.XStream)
-			if err != nil {
-				logger.Fatal(err)
-			}
-
-			sub, err := xstream.NewSub(ctx, cfg.XStream)
+			conn, err := xstream.NewConnection(ctx, cfg.XStream)
 			if err != nil {
 				logger.Fatal(err.Error())
 			}
+			jsc, err := xstream.NewJetStream(ctx, cfg.XStream, conn)
+			if err != nil {
+				logger.Fatal(err.Error())
+			}
+
+			sub := xstream.NewSub(ctx, cfg.XStream, jsc)
 
 			ctx, stop := signal.NotifyContext(ctx, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 			defer stop()
 
 			go func() {
 				nowrapping, _ := cmd.Flags().GetBool("nowrapping")
-				ctx, err = sub(getSampleEvent(cmd.Flags(), false), queue, func(e *entities.Event) error {
-					draw(e, nowrapping)
-					return nil
-				})
-				if err != nil {
+				if err := sub(getSampleEvent(cmd.Flags(), false), queue, UseEventsSubHandler(nowrapping)); err != nil {
 					logger.Fatal(err.Error())
 				}
 
@@ -74,12 +71,15 @@ func NewEventsSub() *cobra.Command {
 			logger.Info("shutting down gracefully, press Ctrl+C again to force")
 			// The context is used to inform the server it has 5 seconds to finish
 			// the request it is currently handling
-			ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+			ctx, cancel := context.WithTimeout(ctx, 7*time.Second)
 			defer cancel()
 
-			if err := xstream.Disconnect(ctx, cfg.XStream); err != nil {
-				logger.Fatal(err.Error())
-			}
+			go func() {
+				time.Sleep(5 * time.Second)
+				<-ctx.Done()
+			}()
+
+			conn.Close()
 		},
 	}
 
@@ -87,4 +87,11 @@ func NewEventsSub() *cobra.Command {
 	command.Flags().BoolP("nowrapping", "", false, "disable wrapping (or) row/column width restrictions")
 
 	return command
+}
+
+func UseEventsSubHandler(nowrapping bool) xstream.SubscribeFn {
+	return func(e *entities.Event) error {
+		draw(e, nowrapping)
+		return nil
+	}
 }

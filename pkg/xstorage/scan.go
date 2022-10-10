@@ -6,16 +6,13 @@ import (
 
 	"github.com/acknode/ackstream/entities"
 	"github.com/acknode/ackstream/pkg/zlogger"
+	"github.com/gocql/gocql"
 )
 
 type Scan func(sample *entities.Event, size int, page []byte) ([]entities.Event, []byte, error)
 
-func UseScan(ctx context.Context, cfg *Configs) (Scan, error) {
+func UseScan(ctx context.Context, cfg *Configs, session *gocql.Session) (Scan, error) {
 	logger := zlogger.FromContext(ctx).With("pkg", "storage", "fn", "storage.scan")
-	session, ok := ConnFromContext(ctx)
-	if !ok {
-		return nil, ErrConnNotInit
-	}
 
 	return func(sample *entities.Event, size int, page []byte) ([]entities.Event, []byte, error) {
 		// @TODO: validate sample

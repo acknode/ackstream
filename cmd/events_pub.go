@@ -26,16 +26,16 @@ func NewEventsPub() *cobra.Command {
 			cfg := cmd.Context().Value(CTXKEY_CONFIGS).(*configs.Configs)
 			ctx := app.NewContext(context.Background(), logger, cfg)
 
-			ctx, err := xstream.Connect(ctx, cfg.XStream)
+			conn, err := xstream.NewConnection(ctx, cfg.XStream)
 			if err != nil {
-				logger.Fatal(err)
+				logger.Fatal(err.Error())
 			}
-			defer xstream.Disconnect(ctx, cfg.XStream)
+			jsc, err := xstream.NewJetStream(ctx, cfg.XStream, conn)
+			if err != nil {
+				logger.Fatal(err.Error())
+			}
 
-			pub, err := xstream.NewPub(ctx, cfg.XStream)
-			if err != nil {
-				log.Fatal(err)
-			}
+			pub := xstream.NewPub(ctx, cfg.XStream, jsc)
 
 			props, err := cmd.Flags().GetStringArray("props")
 			if err != nil {
@@ -70,7 +70,8 @@ func NewEventsPub() *cobra.Command {
 			}
 
 			logger.Infow("published", "publish_key", pubkey)
-			xstream.Disconnect(ctx, cfg.XStream)
+
+			conn.Close()
 		},
 	}
 

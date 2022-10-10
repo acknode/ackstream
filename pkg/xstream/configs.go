@@ -10,5 +10,3 @@ type Configs struct {
 	MaxBytes int64 `json:"max_bytes" mapstructure:"ACKSTREAM_XSTREAM_MAX_BYTES"`
 	MaxAge   int32 `json:"max_age" mapstructure:"ACKSTREAM_XSTREAM_MAX_AGE"`
 }
-
-const CTXKEY_CFG ctxkey = "xstream.cfg"

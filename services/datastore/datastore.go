@@ -13,6 +13,7 @@ import (
 	"github.com/acknode/ackstream/pkg/xstorage"
 	"github.com/acknode/ackstream/pkg/xstream"
 	"github.com/acknode/ackstream/pkg/zlogger"
+	"github.com/gocql/gocql"
 )
 
 type ctxkey string
@@ -33,31 +34,29 @@ func New(ctx context.Context, cfg *configs.Configs) error {
 	logger := zlogger.FromContext(ctx).With("service", "datastore")
 	ctx = zlogger.WithContext(ctx, logger)
 
-	ctx, err := xstream.Connect(ctx, cfg.XStream)
+	conn, err := xstream.NewConnection(ctx, cfg.XStream)
 	if err != nil {
 		return err
 	}
-
-	ctx, err = xstorage.Connect(ctx, cfg.XStorage)
+	jsc, err := xstream.NewJetStream(ctx, cfg.XStream, conn)
+	if err != nil {
+		return err
+	}
+	session, err := xstorage.New(ctx, cfg.XStorage)
 	if err != nil {
 		return err
 	}
 
 	go func() {
-		sub, err := xstream.NewSub(ctx, cfg.XStream)
-		if err != nil {
-			logger.Fatal(err.Error())
-		}
-
-		handler, err := UseHandler(ctx, cfg)
+		sub := xstream.NewSub(ctx, cfg.XStream, jsc)
+		handler, err := UseHandler(ctx, cfg, session)
 		if err != nil {
 			logger.Fatal(err.Error())
 		}
 
 		// because we don't provide a sample of event
 		// so we will listen to all event changes
-		ctx, err = sub(nil, queue, handler)
-		if err != nil {
+		if err := sub(nil, queue, handler); err != nil {
 			logger.Fatal(err.Error())
 		}
 
@@ -70,23 +69,26 @@ func New(ctx context.Context, cfg *configs.Configs) error {
 	logger.Info("shutting down gracefully, press Ctrl+C again to force")
 	// The context is used to inform the server it has 5 seconds to finish
 	// the request it is currently handling
-	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, 7*time.Second)
 	defer cancel()
 
-	if err := xstream.Disconnect(ctx, cfg.XStream); err != nil {
+	go func() {
+		time.Sleep(5 * time.Second)
+		<-ctx.Done()
+	}()
+
+	if err := conn.Drain(); err != nil {
 		return err
 	}
 
-	if err := xstorage.Disconnect(ctx, cfg.XStorage); err != nil {
-		return err
-	}
+	session.Close()
 
 	return nil
 }
 
-func UseHandler(ctx context.Context, cfg *configs.Configs) (xstream.SubscribeFn, error) {
+func UseHandler(ctx context.Context, cfg *configs.Configs, session *gocql.Session) (xstream.SubscribeFn, error) {
 	logger := zlogger.FromContext(ctx)
-	put, err := xstorage.UsePut(ctx, cfg.XStorage)
+	put, err := xstorage.UsePut(ctx, cfg.XStorage, session)
 	if err != nil {
 		return nil, err
 	}

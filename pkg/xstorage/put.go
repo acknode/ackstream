@@ -7,16 +7,13 @@ import (
 
 	"github.com/acknode/ackstream/entities"
 	"github.com/acknode/ackstream/pkg/zlogger"
+	"github.com/gocql/gocql"
 )
 
 type Put func(e *entities.Event) error
 
-func UsePut(ctx context.Context, cfg *Configs) (Put, error) {
+func UsePut(ctx context.Context, cfg *Configs, session *gocql.Session) (Put, error) {
 	logger := zlogger.FromContext(ctx).With("pkg", "storage", "fn", "storage.put")
-	session, ok := ConnFromContext(ctx)
-	if !ok {
-		return nil, ErrConnNotInit
-	}
 
 	return func(e *entities.Event) error {
 		// @TODO: validate event

@@ -6,16 +6,13 @@ import (
 
 	"github.com/acknode/ackstream/entities"
 	"github.com/acknode/ackstream/pkg/zlogger"
+	"github.com/gocql/gocql"
 )
 
 type Get func(sample *entities.Event) (*entities.Event, error)
 
-func UseGet(ctx context.Context, cfg *Configs) (Get, error) {
+func UseGet(ctx context.Context, cfg *Configs, session *gocql.Session) (Get, error) {
 	logger := zlogger.FromContext(ctx).With("pkg", "storage", "fn", "storage.get")
-	session, ok := ConnFromContext(ctx)
-	if !ok {
-		return nil, ErrConnNotInit
-	}
 
 	return func(sample *entities.Event) (*entities.Event, error) {
 		ql := fmt.Sprintf("SELECT data, creation_time FROM %s WHERE bucket = ? AND workspace = ? AND app = ? AND type = ? AND id = ?", cfg.Table)
