@@ -38,11 +38,11 @@ func UseSub(fn SubscribeFn, logger *zap.SugaredLogger) nats.MsgHandler {
 			Data:      string(msg.Data),
 		}
 		ll := logger.With("key", entities.Key())
-		ct, err := strconv.ParseInt(msg.Header.Get("AckStream-Event-Creation-Time"), 10, 64)
+		ct, err := strconv.ParseInt(msg.Header.Get("AckStream-Event-Timestamps"), 10, 64)
 		if err != nil {
 			ll.Errorw(err.Error())
 		}
-		entities.CreationTime = ct
+		entities.Timestamps = ct
 
 		if err := fn(&entities); err != nil {
 			retry, _ := strconv.Atoi(msg.Header.Get("AckStream-Meta-Retry"))

@@ -15,7 +15,7 @@ func UseGet(ctx context.Context, cfg *Configs, session *gocql.Session) (Get, err
 	logger := zlogger.FromContext(ctx).With("pkg", "storage", "fn", "storage.get")
 
 	return func(sample *entities.Event) (*entities.Event, error) {
-		ql := fmt.Sprintf("SELECT data, creation_time FROM %s WHERE bucket = ? AND workspace = ? AND app = ? AND type = ? AND id = ?", cfg.Table)
+		ql := fmt.Sprintf("SELECT data, timestamps FROM %s WHERE bucket = ? AND workspace = ? AND app = ? AND type = ? AND id = ?", cfg.Table)
 		query := session.Query(ql, sample.Bucket, sample.Workspace, sample.App, sample.Type, sample.Id)
 		logger.Debugw("scan entitiess", "ql", ql, "id", sample.Id)
 
@@ -26,7 +26,7 @@ func UseGet(ctx context.Context, cfg *Configs, session *gocql.Session) (Get, err
 			Type:      sample.Type,
 			Id:        sample.Id,
 		}
-		err := query.Scan(&e.Data, &e.CreationTime)
+		err := query.Scan(&e.Data, &e.Timestamps)
 		logger.Debugw("get entities", "ql", ql, "key", e.Key(), "found", err == nil)
 
 		return &e, err

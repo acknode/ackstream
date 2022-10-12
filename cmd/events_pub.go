@@ -55,12 +55,12 @@ func NewEventsPub() *cobra.Command {
 			sample := getSampleEvent(cmd.Flags(), true)
 			bucket, ts := utils.NewBucket(cfg.XStorage.BucketTemplate)
 			event := entities.Event{
-				Bucket:       bucket,
-				Workspace:    sample.Workspace,
-				App:          sample.App,
-				Type:         sample.Type,
-				CreationTime: ts,
-				Data:         string(data),
+				Bucket:     bucket,
+				Workspace:  sample.Workspace,
+				App:        sample.App,
+				Type:       sample.Type,
+				Timestamps: ts,
+				Data:       string(data),
 			}
 			event.WithId()
 

@@ -19,8 +19,8 @@ type Event struct {
 	Id string `json:"id"`
 
 	// properties
-	CreationTime int64  `json:"creation_time"`
-	Data         string `json:"data"`
+	Timestamps int64  `json:"timestamps"`
+	Data       string `json:"data"`
 }
 
 func (event *Event) SetPartitionKeys(ds *Event) bool {

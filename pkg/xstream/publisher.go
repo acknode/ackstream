@@ -31,7 +31,7 @@ func UsePub(cfg *Configs, streamctx nats.JetStreamContext, logger *zap.SugaredLo
 		msg.Header.Set("AckStream-Event-Workspace", e.Workspace)
 		msg.Header.Set("AckStream-Event-App", e.App)
 		msg.Header.Set("AckStream-Event-Type", e.Type)
-		msg.Header.Set("AckStream-Event-Creation-Time", fmt.Sprint(e.CreationTime))
+		msg.Header.Set("AckStream-Event-Timestamps", fmt.Sprint(e.Timestamps))
 
 		ack, err := streamctx.PublishMsg(msg)
 		if err != nil {

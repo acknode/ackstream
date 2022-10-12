@@ -43,7 +43,7 @@ func draw(e *entities.Event, nowrapping bool) {
 	t.AppendRow([]interface{}{"app", e.App})
 	t.AppendRow([]interface{}{"type", e.Type})
 	t.AppendRow([]interface{}{"id", e.Id})
-	t.AppendRow([]interface{}{"creation_time", time.UnixMilli(e.CreationTime).Format(time.RFC3339)})
+	t.AppendRow([]interface{}{"timestamps", time.UnixMilli(e.Timestamps).Format(time.RFC3339)})
 	t.AppendSeparator()
 	t.AppendRow([]interface{}{"data", e.Data})
 	t.AppendRow([]interface{}{"length", humanize.Bytes(uint64(len([]byte(e.Data))))})
