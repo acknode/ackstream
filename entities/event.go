@@ -1,6 +1,7 @@
 package entities
 
 import (
+	"github.com/go-playground/validator/v10"
 	"strings"
 
 	"github.com/acknode/ackstream/utils"
@@ -8,24 +9,24 @@ import (
 
 type Event struct {
 	// partition keys, we often use the timestamp with format YYMMDD
-	Bucket    string `json:"bucket"`
-	Workspace string `json:"workspace"`
-	App       string `json:"app"`
-	Type      string `json:"type"`
+	Bucket    string `json:"bucket" validate:"required"`
+	Workspace string `json:"workspace" validate:"required"`
+	App       string `json:"app" validate:"required"`
+	Type      string `json:"type" validate:"required"`
 
 	// clustering keys
 	// chronologically sortable id - ksuid - 1sec resolution
-	Id string `json:"id"`
+	Id string `json:"id" validate:"required"`
 
 	// properties
-	Timestamps int64  `json:"timestamps"`
-	Data       string `json:"data"`
+	Timestamps int64                  `json:"timestamps" validate:"required,gt=0"`
+	Data       map[string]interface{} `json:"data" validate:"required"`
 }
 
 func (event *Event) SetPartitionKeys(e *Event) bool {
 	// only set new partition keys if they are not set yet
-	ok := event.Bucket == "" && event.Workspace == "" && event.App == "" && event.Type == ""
-	if !ok {
+	notset := event.Bucket == "" && event.Workspace == "" && event.App == "" && event.Type == ""
+	if !notset {
 		return false
 	}
 
@@ -55,4 +56,9 @@ func (event *Event) Key() string {
 		event.Id,
 	}
 	return strings.Join(keys, "/")
+}
+
+func (event *Event) Valid() bool {
+	validate := validator.New()
+	return validate.Struct(event) == nil
 }
