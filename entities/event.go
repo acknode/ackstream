@@ -19,14 +19,14 @@ type Event struct {
 	Id string `json:"id" validate:"required"`
 
 	// properties
-	Timestamps int64                  `json:"timestamps" validate:"required,gt=0"`
-	Data       map[string]interface{} `json:"data" validate:"required"`
+	Timestamps int64                  `json:"timestamps"`
+	Data       map[string]interface{} `json:"data"`
 }
 
 func (event *Event) SetPartitionKeys(e *Event) bool {
 	// only set new partition keys if they are not set yet
-	notset := event.Bucket == "" && event.Workspace == "" && event.App == "" && event.Type == ""
-	if !notset {
+	empty := event.Bucket == "" && event.Workspace == "" && event.App == "" && event.Type == ""
+	if !empty {
 		return false
 	}
 
@@ -38,7 +38,7 @@ func (event *Event) SetPartitionKeys(e *Event) bool {
 }
 
 func (event *Event) WithId() bool {
-	// only set new id it the id didn't set yet
+	// only set new id if the id didn't set yet
 	if event.Id != "" {
 		return false
 	}
