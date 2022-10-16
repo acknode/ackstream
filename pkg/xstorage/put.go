@@ -8,7 +8,7 @@ import (
 	"github.com/vmihailenco/msgpack/v5"
 )
 
-type Put func(e *entities.Event) error
+type Put func(event *entities.Event) error
 
 func NewPut(ctx context.Context) (Put, error) {
 	logger := xlogger.FromContext(ctx).

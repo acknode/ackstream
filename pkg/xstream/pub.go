@@ -24,19 +24,19 @@ func NewPub(ctx context.Context) (Pub, error) {
 		return nil, err
 	}
 
-	return func(event *entities.Event) (string, error) {
+	return func(event *entities.Event) (*string, error) {
 		flogger := logger.With("event_key", event.Key())
 
 		msg, err := NewMsg(cfg, event)
 		if err != nil {
 			flogger.Error(err.Error())
-			return "", err
+			return nil, err
 		}
 
 		ack, err := jsc.PublishMsg(msg)
 		if err != nil {
 			flogger.Error(err.Error())
-			return "", err
+			return nil, err
 		}
 
 		pubkey := strings.Join([]string{
@@ -46,6 +46,6 @@ func NewPub(ctx context.Context) (Pub, error) {
 			event.Id,
 		}, "/")
 		logger.Debugw("published", "pubkey", pubkey)
-		return pubkey, nil
+		return &pubkey, nil
 	}, nil
 }
