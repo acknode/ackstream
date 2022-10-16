@@ -1,13 +1,13 @@
 package main
 
 import (
+	"github.com/acknode/ackstream/utils"
 	"log"
 	"os"
 	"runtime/debug"
 	"time"
 
 	"github.com/acknode/ackstream/cmd"
-	"github.com/acknode/ackstream/pkg/configs"
 )
 
 func main() {
@@ -27,7 +27,7 @@ func main() {
 }
 
 func exit(code int) {
-	if debug := configs.IsDebug("ACKSTREAM_ENV"); !debug {
+	if debug := utils.IsDebug("ACKSTREAM_ENV"); !debug {
 		log.Println("stopping...")
 		time.Sleep(5 * time.Second)
 	}

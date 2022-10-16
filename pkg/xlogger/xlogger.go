@@ -1,30 +1,10 @@
-package zlogger
+package xlogger
 
 import (
-	"context"
-	"errors"
-	"os"
-
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+	"os"
 )
-
-type ctxkey string
-
-const CTXKEY ctxkey = "ack.zlogger"
-
-func WithContext(ctx context.Context, logger *zap.SugaredLogger) context.Context {
-	return context.WithValue(ctx, CTXKEY, logger)
-}
-
-func FromContext(ctx context.Context) *zap.SugaredLogger {
-	logger, ok := ctx.Value(CTXKEY).(*zap.SugaredLogger)
-	if !ok {
-		panic(errors.New("no logger was configured"))
-	}
-
-	return logger
-}
 
 func New(debug bool) *zap.SugaredLogger {
 	ws := zapcore.Lock(os.Stdout)
@@ -36,18 +16,16 @@ func New(debug bool) *zap.SugaredLogger {
 		zapcore.NewCore(encoder, ws, priority),
 	)
 	logger := zap.New(core)
-	defer logger.Sync()
-
 	return logger.Sugar()
 }
 
 func withEnableLevel(debug bool) zap.LevelEnablerFunc {
-	return zap.LevelEnablerFunc(func(lvl zapcore.Level) bool {
+	return func(lvl zapcore.Level) bool {
 		if debug {
 			return lvl >= zapcore.DebugLevel
 		}
 		return lvl >= zapcore.InfoLevel
-	})
+	}
 }
 
 func withEncoder(debug bool) zapcore.Encoder {

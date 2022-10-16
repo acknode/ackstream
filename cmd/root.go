@@ -1,29 +1,25 @@
 package cmd
 
 import (
-	"context"
-
-	"github.com/acknode/ackstream/pkg/configs"
-	"github.com/acknode/ackstream/pkg/zlogger"
+	"github.com/acknode/ackstream/internal/configs"
+	"github.com/acknode/ackstream/pkg/xlogger"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
-
-type ctxkey string
-
-const CTXKEY_CONFIGS ctxkey = "ackstream.cmd.configs"
-const CTXKEY_LOGGER ctxkey = "ackstream.cmd.logger"
 
 func New() *cobra.Command {
 	command := &cobra.Command{
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 			ctx := cmd.Context()
 
-			cfg := WithConfigs(cmd.Flags())
-			ctx = context.WithValue(ctx, CTXKEY_CONFIGS, cfg)
+			cfg, err := WithConfigs(cmd.Flags())
+			if err != nil {
+				return err
+			}
+			ctx = configs.WithContext(ctx, cfg)
 
-			logger := zlogger.New(cfg.Debug)
-			ctx = context.WithValue(ctx, CTXKEY_LOGGER, logger)
+			logger := xlogger.New(cfg.Debug)
+			ctx = xlogger.WithContext(ctx, logger)
 
 			cmd.SetContext(ctx)
 			return nil
@@ -33,32 +29,31 @@ func New() *cobra.Command {
 	command.PersistentFlags().StringArrayP("configs-dirs", "c", []string{".", "./secrets"}, "path/to/config/file")
 	command.PersistentFlags().StringArrayP("set", "s", []string{}, "override values in config file")
 
-	command.AddCommand(NewStart())
-	command.AddCommand(NewEvents())
-
+	command.AddCommand(NewGet())
 	return command
 }
 
-func WithConfigs(flags *pflag.FlagSet) *configs.Configs {
+func WithConfigs(flags *pflag.FlagSet) (*configs.Configs, error) {
 	sets, err := flags.GetStringArray("set")
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 	cfgdirs, err := flags.GetStringArray("configs-dirs")
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
+
 	provider, err := configs.NewProvider(cfgdirs...)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
 	cfg, err := configs.New(provider, sets)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
-	return cfg
+	return cfg, nil
 }
 
 func Chain() func(cmd *cobra.Command, args []string) error {
