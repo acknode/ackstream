@@ -13,7 +13,9 @@ import (
 
 func NewSub(ctx context.Context) (Sub, error) {
 	logger := xlogger.FromContext(ctx).
-		With("pkg", "xstream")
+		With("pkg", "xstream").
+		With("fn", "xstream.sub")
+	ctx = xlogger.WithContext(ctx, logger)
 
 	cfg, err := CfgFromContext(ctx)
 	if err != nil {
@@ -36,8 +38,7 @@ func NewSub(ctx context.Context) (Sub, error) {
 }
 
 func UseSub(ctx context.Context, fn SubscribeFn) nats.MsgHandler {
-	logger := xlogger.FromContext(ctx).
-		With("fn", "xstream.subscriber")
+	logger := xlogger.FromContext(ctx)
 
 	return func(msg *nats.Msg) {
 		event, err := NewEvent(msg)
@@ -48,15 +49,15 @@ func UseSub(ctx context.Context, fn SubscribeFn) nats.MsgHandler {
 			}
 			return
 		}
-		fnlogger := logger.With("event_key", event.Key())
-		fnlogger.Debug("got event")
+		flogger := logger.With("event_key", event.Key())
+		flogger.Debug("got event")
 
 		if err := fn(event); err != nil {
 			retry, _ := strconv.ParseInt(msg.Header.Get("AckStream-Meta-Retry"), 10, 64)
-			fnlogger.Errorw("could not handle event", "error", err.Error(), "retry_count", retry)
+			flogger.Errorw("could not handle event", "error", err.Error(), "retry_count", retry)
 
 			msg.Header.Set("AckStream-Meta-Retry", fmt.Sprint(retry+1))
-			// subcribers must handle error by themselves
+			// subscribers must handle error by themselves
 			// if they throw an error, message will be delivered again
 			if err := msg.NakWithDelay(time.Duration(math.Pow(2, float64(retry+1)))); err != nil {
 				logger.Errorw("nak was failed", "error", err.Error())
@@ -67,6 +68,6 @@ func UseSub(ctx context.Context, fn SubscribeFn) nats.MsgHandler {
 		if err := msg.Ack(); err != nil {
 			logger.Errorw("ack was failed", "error", err.Error())
 		}
-		fnlogger.Debug("processed event")
+		flogger.Debug("processed event")
 	}
 }

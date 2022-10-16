@@ -1,6 +1,7 @@
 package configs
 
 import (
+	"github.com/acknode/ackstream/pkg/xstream"
 	"github.com/acknode/ackstream/utils"
 	"github.com/spf13/viper"
 	"os"
@@ -9,16 +10,17 @@ import (
 
 type Configs struct {
 	Debug   bool
-	Version string `json:"version" mapstructure:"ACKSTREAM_VERSION"`
+	Version string           `json:"version" mapstructure:"ACKSTREAM_VERSION"`
+	XStream *xstream.Configs `json:"xstream"`
 }
 
-func NewProvider(cfgdirs ...string) (*viper.Viper, error) {
+func NewProvider(dirs ...string) (*viper.Viper, error) {
 	provider := viper.New()
 	provider.AutomaticEnv()
 	provider.SetConfigName("configs")
 	provider.SetConfigType("props")
 
-	for _, dir := range cfgdirs {
+	for _, dir := range dirs {
 		provider.AddConfigPath(dir)
 		if err := provider.MergeInConfig(); err != nil {
 			// ignore not found files, otherwise return error
@@ -32,8 +34,7 @@ func NewProvider(cfgdirs ...string) (*viper.Viper, error) {
 	provider.SetDefault("ACKSTREAM_REGION", "local")
 	provider.SetDefault("ACKSTREAM_VERSION", version())
 
-	// pubsub
-	// set stream region to global region by default
+	// xstream
 	provider.SetDefault("ACKSTREAM_XSTREAM_URI", "nats://127.0.0.1:4222")
 	provider.SetDefault("ACKSTREAM_XSTREAM_NAME", "ackstream")
 	provider.SetDefault("ACKSTREAM_XSTREAM_REGION", provider.Get("ACKSTREAM_REGION"))
@@ -42,7 +43,7 @@ func NewProvider(cfgdirs ...string) (*viper.Viper, error) {
 	provider.SetDefault("ACKSTREAM_XSTREAM_MAX_BYTES", 8388608) // 8 * 1024 * 1024
 	provider.SetDefault("ACKSTREAM_XSTREAM_MAX_AGE", 1)         // hours
 
-	// storage
+	// xstorage
 	provider.SetDefault("ACKSTREAM_XSTORAGE_HOSTS", []string{"127.0.0.1"})
 	provider.SetDefault("ACKSTREAM_XSTORAGE_KEYSPACE", "ackstream")
 	provider.SetDefault("ACKSTREAM_XSTORAGE_TABLE", "events")
