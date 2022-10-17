@@ -30,6 +30,7 @@ func New() *cobra.Command {
 	command.PersistentFlags().StringArrayP("configs-dirs", "c", []string{".", "./secrets"}, "path/to/config/file")
 	command.PersistentFlags().StringArrayP("set", "s", []string{}, "override values in config file")
 
+	command.AddCommand(NewMigrate())
 	command.AddCommand(NewGet())
 	command.AddCommand(NewPub())
 	return command

@@ -57,6 +57,12 @@ func NewPub() *cobra.Command {
 			if err != nil {
 				logger.Fatal(err.Error())
 			}
+			defer func() {
+				if _, err := app.Disconnect(ctx); err != nil {
+					logger.Error(err.Error())
+				}
+			}()
+
 			pub, err := app.NewPub(ctx)
 			if err != nil {
 				logger.Fatal(err.Error())
@@ -68,10 +74,6 @@ func NewPub() *cobra.Command {
 			}
 
 			logger.Info("published an event successfully", "pubkey", key)
-
-			if _, err := app.Disconnect(ctx); err != nil {
-				logger.Error(err.Error())
-			}
 		},
 	}
 

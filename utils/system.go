@@ -1,7 +1,25 @@
 package utils
 
-import "os"
+import (
+	"io/fs"
+	"os"
+	"path/filepath"
+)
 
 func IsDebug(envkey string) bool {
 	return os.Getenv(envkey) == "dev"
+}
+
+func ScanFiles(root, ext string) ([]string, error) {
+	var filepaths []string
+	err := filepath.WalkDir(root, func(s string, d fs.DirEntry, e error) error {
+		if e != nil {
+			return e
+		}
+		if filepath.Ext(d.Name()) == ext {
+			filepaths = append(filepaths, s)
+		}
+		return nil
+	})
+	return filepaths, err
 }
