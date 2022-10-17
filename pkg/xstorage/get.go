@@ -5,13 +5,12 @@ import (
 	"fmt"
 	"github.com/acknode/ackstream/entities"
 	"github.com/acknode/ackstream/pkg/xlogger"
-	"github.com/gocql/gocql"
 	"github.com/vmihailenco/msgpack/v5"
 )
 
 type Get func(sample *entities.Event) (*entities.Event, error)
 
-func UseGet(ctx context.Context, cfg *Configs, session *gocql.Session) (Get, error) {
+func NewGet(ctx context.Context) (Get, error) {
 	logger := xlogger.FromContext(ctx).
 		With("pkg", "xstorage").
 		With("fn", "put")

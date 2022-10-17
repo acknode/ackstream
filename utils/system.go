@@ -6,8 +6,8 @@ import (
 	"path/filepath"
 )
 
-func IsDebug(envkey string) bool {
-	return os.Getenv(envkey) == "dev"
+func IsDebug(key string) bool {
+	return os.Getenv(key) == "dev"
 }
 
 func ScanFiles(root, ext string) ([]string, error) {

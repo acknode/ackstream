@@ -2,9 +2,9 @@ package cmd
 
 import (
 	"github.com/acknode/ackstream/app"
-	"github.com/acknode/ackstream/entities"
 	"github.com/acknode/ackstream/internal/configs"
 	"github.com/acknode/ackstream/pkg/xlogger"
+	"github.com/acknode/ackstream/pkg/xstorage"
 	"github.com/acknode/ackstream/utils"
 	"github.com/spf13/cobra"
 	"strings"
@@ -12,41 +12,28 @@ import (
 
 func NewPub() *cobra.Command {
 	command := &cobra.Command{
-		Use:               "pub -w workspace -a app -t type [-p property]",
+		Use:               "pub -w WORKSPACE -a APP -t TYPE [-p PROPERTY]",
 		Short:             "publish an event to our stream",
 		Example:           "ackstream pub -w ws_default -a app_demo -t cli.trigger -p env=local -p os=macos",
 		PersistentPreRunE: Chain(),
+		PreRunE: func(cmd *cobra.Command, args []string) error {
+			migrateDirs, err := cmd.Flags().GetStringArray("migrate-dirs")
+			if err != nil {
+				return err
+			}
+			return xstorage.Migrate(cmd.Context(), migrateDirs)
+		},
 		Run: func(cmd *cobra.Command, args []string) {
 			logger := xlogger.FromContext(cmd.Context()).With("cli.fn", "pub")
 
-			ws, err := cmd.Flags().GetString("workspace")
-			if err != nil {
-				logger.Fatal(err.Error())
-			}
-			eapp, err := cmd.Flags().GetString("app")
-			if err != nil {
-				logger.Fatal(err.Error())
-			}
-			etype, err := cmd.Flags().GetString("type")
-			if err != nil {
-				logger.Fatal(err.Error())
-			}
-
+			event := parseEventSample(cmd.Flags())
 			cfg := configs.FromContext(cmd.Context())
-			bucket, ts := utils.NewBucket(cfg.BucketTemplate)
-			event := &entities.Event{
-				Bucket:     bucket,
-				Workspace:  ws,
-				App:        eapp,
-				Type:       etype,
-				Id:         utils.NewId("event"),
-				Timestamps: ts,
-				Data:       map[string]interface{}{},
-			}
+			event.Bucket, event.Timestamps = utils.NewBucket(cfg.BucketTemplate)
+			event.WithId()
 
 			props, err := cmd.Flags().GetStringArray("props")
 			if err != nil {
-				logger.Fatal(err.Error())
+				logger.Fatal(err)
 			}
 			for _, prop := range props {
 				kv := strings.Split(prop, "=")
@@ -55,7 +42,7 @@ func NewPub() *cobra.Command {
 
 			ctx, err := app.Connect(cmd.Context())
 			if err != nil {
-				logger.Fatal(err.Error())
+				logger.Fatal(err)
 			}
 			defer func() {
 				if _, err := app.Disconnect(ctx); err != nil {
@@ -65,15 +52,15 @@ func NewPub() *cobra.Command {
 
 			pub, err := app.NewPub(ctx)
 			if err != nil {
-				logger.Fatal(err.Error())
+				logger.Fatal(err)
 			}
 
 			key, err := pub(event)
 			if err != nil {
-				logger.Fatal(err.Error())
+				logger.Fatal(err)
 			}
 
-			logger.Info("published an event successfully", "pubkey", key)
+			logger.Infow("published an event successfully", "pubkey", *key)
 		},
 	}
 
@@ -87,6 +74,7 @@ func NewPub() *cobra.Command {
 	_ = command.MarkFlagRequired("type")
 
 	command.Flags().StringArrayP("props", "p", []string{}, "--props='env=local': set data properties")
+	command.Flags().StringArrayP("migrate-dirs", "", []string{}, "migrate resources before start the command")
 
 	return command
 }

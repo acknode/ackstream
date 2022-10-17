@@ -31,15 +31,16 @@ func NewMsg(cfg *Configs, event *entities.Event) (*nats.Msg, error) {
 }
 
 func NewEvent(msg *nats.Msg) (*entities.Event, error) {
-	event := &entities.Event{
+	event := entities.Event{
 		Id:        msg.Header.Get("AckStream-Event-Id"),
 		Bucket:    msg.Header.Get("AckStream-Event-Bucket"),
 		Workspace: msg.Header.Get("AckStream-Event-Workspace"),
 		App:       msg.Header.Get("AckStream-Event-App"),
 		Type:      msg.Header.Get("AckStream-Event-Type"),
+		Data:      map[string]interface{}{},
 	}
 
-	if err := msgpack.Unmarshal(msg.Data, event.Data); err != nil {
+	if err := msgpack.Unmarshal(msg.Data, &event.Data); err != nil {
 		return nil, err
 	}
 
@@ -52,5 +53,5 @@ func NewEvent(msg *nats.Msg) (*entities.Event, error) {
 	if !event.Valid() {
 		return nil, ErrMsgInvalidEvent
 	}
-	return event, nil
+	return &event, nil
 }

@@ -20,6 +20,10 @@ func Migrate(ctx context.Context, dirs []string) error {
 		With("fn", "migrate")
 	pattern := ".cql"
 
+	if len(dirs) == 0 {
+		return nil
+	}
+
 	var filepaths []string
 	for _, p := range dirs {
 		paths, err := utils.ScanFiles(p, pattern)

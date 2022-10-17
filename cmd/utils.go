@@ -7,11 +7,9 @@ import (
 	"time"
 )
 
-func printEvent(event *entities.Event, wrapping bool) {
+func printEvent(event *entities.Event) {
 	t := table.NewWriter()
-	if wrapping {
-		t.SetAllowedRowLength(80)
-	}
+	t.SetAllowedRowLength(80)
 	t.SetOutputMirror(os.Stdout)
 	t.AppendHeader(table.Row{"Key", "Value"})
 

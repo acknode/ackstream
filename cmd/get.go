@@ -12,5 +12,7 @@ func NewGet() *cobra.Command {
 	}
 
 	command.AddCommand(NewGetSystem())
+	command.AddCommand(NewGetEvents())
+
 	return command
 }

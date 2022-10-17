@@ -43,7 +43,7 @@ func NewPut(ctx context.Context) (Put, error) {
 			data,
 			event.Timestamps,
 		)
-		flogger.Debugw("put events", "data_length", len(data))
+		flogger.Debugw("put event", "data_length", len(data))
 
 		return query.Exec()
 	}, nil

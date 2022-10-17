@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"github.com/acknode/ackstream/entities"
 	"github.com/acknode/ackstream/internal/configs"
 	"github.com/acknode/ackstream/pkg/xlogger"
 	"github.com/spf13/cobra"
@@ -33,6 +34,7 @@ func New() *cobra.Command {
 	command.AddCommand(NewMigrate())
 	command.AddCommand(NewGet())
 	command.AddCommand(NewPub())
+	command.AddCommand(NewSub())
 	return command
 }
 
@@ -67,4 +69,28 @@ func Chain() func(cmd *cobra.Command, args []string) error {
 		cmd.SetContext(parent.Context())
 		return err
 	}
+}
+
+func parseEventSample(flags *pflag.FlagSet) *entities.Event {
+	event := &entities.Event{
+		Data: map[string]interface{}{},
+	}
+
+	if bucket, err := flags.GetString("bucket"); err == nil {
+		event.Bucket = bucket
+	}
+	if ws, err := flags.GetString("workspace"); err == nil {
+		event.Workspace = ws
+	}
+	if app, err := flags.GetString("app"); err == nil {
+		event.App = app
+	}
+	if etype, err := flags.GetString("type"); err == nil {
+		event.Type = etype
+	}
+	if id, err := flags.GetString("id"); err == nil {
+		event.Id = id
+	}
+
+	return event
 }

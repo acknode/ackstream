@@ -20,7 +20,6 @@ services:
     depends_on: [ "nats-node-1" ]
 
   scylla-node-1:
-    platform: linux/arm64
     image: scylladb/scylla:latest
     restart: always
     command: --developer-mode 1 --seeds=scylla-node-2,scylla-node-3 --smp 1 --memory 750M --overprovisioned 1 --api-address 0.0.0.0
@@ -31,7 +30,6 @@ services:
       - "./scylla/scylla.yaml:/etc/scylla/scylla.yaml"
       - "./scylla/cassandra-rackdc.properties:/etc/scylla/cassandra-rackdc.properties"
   scylla-node-2:
-    platform: linux/arm64
     image: scylladb/scylla:latest
     restart: always
     command: --developer-mode 1 --seeds=scylla-node-2,scylla-node-3 --smp 1 --memory 750M --overprovisioned 1 --api-address 0.0.0.0
@@ -42,7 +40,6 @@ services:
       - "./scylla/scylla.yaml:/etc/scylla/scylla.yaml"
       - "./scylla/cassandra-rackdc.properties:/etc/scylla/cassandra-rackdc.properties"
   scylla-node-3:
-    platform: linux/arm64
     image: scylladb/scylla:latest
     restart: always
     command: --developer-mode 1 --seeds=scylla-node-2,scylla-node-3 --smp 1 --memory 750M --overprovisioned 1 --api-address 0.0.0.0
