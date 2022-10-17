@@ -1,5 +1,5 @@
 # General
-ACKSTREAM_ENV=
+ACKSTREAM_ENV=dev
 ACKSTREAM_VERSION=v22.2.22
 
 # Stream

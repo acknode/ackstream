@@ -17,7 +17,7 @@ func NewPub() *cobra.Command {
 		Example:           "ackstream pub -w ws_default -a app_demo -t cli.trigger -p env=local -p os=macos",
 		PersistentPreRunE: Chain(),
 		Run: func(cmd *cobra.Command, args []string) {
-			logger := xlogger.FromContext(cmd.Context())
+			logger := xlogger.FromContext(cmd.Context()).With("cli.fn", "pub")
 
 			ws, err := cmd.Flags().GetString("workspace")
 			if err != nil {
@@ -84,7 +84,7 @@ func NewPub() *cobra.Command {
 	command.Flags().StringP("type", "t", "", "--type='': specify which type of event you want to use")
 	_ = command.MarkFlagRequired("type")
 
-	command.Flags().StringP("props", "p", "", "--props='env=local': set data properties")
+	command.Flags().StringArrayP("props", "p", []string{}, "--props='env=local': set data properties")
 
 	return command
 }
