@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/acknode/ackstream/entities"
 	"github.com/acknode/ackstream/pkg/xlogger"
-	"github.com/vmihailenco/msgpack/v5"
 )
 
 type Get func(sample *entities.Event) (*entities.Event, error)
@@ -49,10 +48,10 @@ func NewGet(ctx context.Context) (Get, error) {
 		}
 		flogger.Debugw("get entities", "ql", ql, "key", event.Key(), "found", err == nil)
 
-		if err := msgpack.Unmarshal(data, &event.Data); err != nil {
+		if err := event.WithData(data); err != nil {
 			return nil, err
 		}
 
-		return &event, err
+		return &event, nil
 	}, nil
 }

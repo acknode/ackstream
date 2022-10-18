@@ -35,6 +35,8 @@ func New() *cobra.Command {
 	command.AddCommand(NewGet())
 	command.AddCommand(NewPub())
 	command.AddCommand(NewSub())
+	command.AddCommand(NewServe())
+
 	return command
 }
 

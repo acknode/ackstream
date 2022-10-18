@@ -23,3 +23,7 @@ func ScanFiles(root, ext string) ([]string, error) {
 	})
 	return filepaths, err
 }
+
+func WithHealthCheck(keyPath string) error {
+	return os.WriteFile(keyPath, []byte("Healthy"), 0644)
+}

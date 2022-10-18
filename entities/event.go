@@ -1,7 +1,9 @@
 package entities
 
 import (
+	"errors"
 	"github.com/go-playground/validator/v10"
+	"github.com/vmihailenco/msgpack/v5"
 	"strings"
 
 	"github.com/acknode/ackstream/utils"
@@ -23,28 +25,37 @@ type Event struct {
 	Data       map[string]interface{} `json:"data"`
 }
 
-func (event *Event) SetPartitionKeys(e *Event) bool {
-	// only set new partition keys if they are not set yet
-	empty := event.Bucket == "" && event.Workspace == "" && event.App == "" && event.Type == ""
-	if !empty {
-		return false
-	}
-
-	event.Bucket = e.Bucket
-	event.Workspace = e.Workspace
-	event.App = e.App
-	event.Type = e.Type
-	return true
-}
-
-func (event *Event) WithId() bool {
-	// only set new id if the id didn't set yet
+func (event *Event) WithId() error {
+	// only set data if it wasn't set yet
 	if event.Id != "" {
-		return false
+		return errors.New("id has set already")
 	}
 
 	event.Id = utils.NewId("event")
-	return true
+	return nil
+}
+
+func (event *Event) WithData(data []byte) error {
+	// only set data if it wasn't set yet
+	if event.Data != nil {
+		return errors.New("data has set already")
+	}
+	if err := msgpack.Unmarshal(data, &event.Data); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (event *Event) WithBucket(template string) error {
+	// only set data if it wasn't set yet
+	if event.Timestamps > 0 {
+		return errors.New("timestamps has set already")
+	}
+	if event.Bucket != "" {
+		return errors.New("bucket has set already")
+	}
+	event.Bucket, event.Timestamps = utils.NewBucket(template)
+	return nil
 }
 
 func (event *Event) Key() string {

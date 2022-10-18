@@ -5,7 +5,6 @@ import (
 	"github.com/acknode/ackstream/internal/configs"
 	"github.com/acknode/ackstream/pkg/xlogger"
 	"github.com/acknode/ackstream/pkg/xstorage"
-	"github.com/acknode/ackstream/utils"
 	"github.com/spf13/cobra"
 	"strings"
 )
@@ -28,8 +27,12 @@ func NewPub() *cobra.Command {
 
 			event := parseEventSample(cmd.Flags())
 			cfg := configs.FromContext(cmd.Context())
-			event.Bucket, event.Timestamps = utils.NewBucket(cfg.BucketTemplate)
-			event.WithId()
+			if err := event.WithBucket(cfg.BucketTemplate); err != nil {
+				logger.Fatal(err)
+			}
+			if err := event.WithId(); err != nil {
+				logger.Fatal(err)
+			}
 
 			props, err := cmd.Flags().GetStringArray("props")
 			if err != nil {
@@ -46,7 +49,7 @@ func NewPub() *cobra.Command {
 			}
 			defer func() {
 				if _, err := app.Disconnect(ctx); err != nil {
-					logger.Error(err.Error())
+					logger.Error(err)
 				}
 			}()
 

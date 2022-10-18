@@ -17,7 +17,7 @@ func NewMigrate() *cobra.Command {
 			logger := xlogger.FromContext(cmd.Context()).With("cli.fn", "migrate")
 
 			if err := xstorage.Migrate(cmd.Context(), args); err != nil {
-				logger.Error(err.Error())
+				logger.Error(err)
 			}
 		},
 	}

@@ -29,13 +29,13 @@ func NewPub(ctx context.Context) (Pub, error) {
 
 		msg, err := NewMsg(cfg, event)
 		if err != nil {
-			flogger.Error(err.Error())
+			flogger.Error(err)
 			return nil, err
 		}
 
 		ack, err := jsc.PublishMsg(msg)
 		if err != nil {
-			flogger.Error(err.Error())
+			flogger.Error(err)
 			return nil, err
 		}
 

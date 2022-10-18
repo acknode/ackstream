@@ -28,7 +28,7 @@ func Migrate(ctx context.Context, dirs []string) error {
 	for _, p := range dirs {
 		paths, err := utils.ScanFiles(p, pattern)
 		if err != nil {
-			logger.Error(err.Error())
+			logger.Error(err)
 			continue
 		}
 
@@ -54,7 +54,7 @@ func Migrate(ctx context.Context, dirs []string) error {
 
 	for _, filepath := range filepaths {
 		if err := migrate(conn, cfg, filepath); err != nil {
-			logger.Error(err.Error())
+			logger.Error(err)
 		}
 	}
 

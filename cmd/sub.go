@@ -29,7 +29,6 @@ func NewSub() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			logger := xlogger.FromContext(cmd.Context()).With("cli.fn", "sub")
 
-			sample := parseEventSample(cmd.Flags())
 			queue, err := cmd.Flags().GetString("queue")
 			if err != nil {
 				logger.Fatal(err)
@@ -41,7 +40,7 @@ func NewSub() *cobra.Command {
 			}
 			defer func() {
 				if _, err := app.Disconnect(ctx); err != nil {
-					logger.Error(err.Error())
+					logger.Error(err)
 				}
 			}()
 
@@ -55,6 +54,7 @@ func NewSub() *cobra.Command {
 
 			logger.Info("starting...")
 			go func() {
+				sample := parseEventSample(cmd.Flags())
 				err = sub(sample, queue, func(event *entities.Event) error {
 					printEvent(event)
 					return nil
@@ -81,16 +81,9 @@ func NewSub() *cobra.Command {
 	}
 
 	command.Flags().StringP("workspace", "w", "", " --workspace='': specify which workspace you want to publish an event to")
-	_ = command.MarkFlagRequired("workspace")
-
 	command.Flags().StringP("app", "a", "", "--app='': specify which app you are working with")
-	_ = command.MarkFlagRequired("app")
-
 	command.Flags().StringP("type", "t", "", "--type='': specify which type of event you want to use")
-	_ = command.MarkFlagRequired("type")
-
 	command.Flags().StringP("queue", "q", "", " --queue='': specify name of your queue. DO NOT USE PRODUCTION QUEUE NAME")
-	_ = command.MarkFlagRequired("queue")
 
 	command.Flags().StringArrayP("migrate-dirs", "", []string{}, "migrate resources before start the command")
 
