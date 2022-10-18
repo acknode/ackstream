@@ -6,7 +6,7 @@ import (
 )
 
 type Configs struct {
-	Port int `json:"port" mapstructure:"PORT"`
+	ListenAddress string `json:"listen_address" mapstructure:"ACKSTREAM_EVENTS_LISTEN_ADDRESS"`
 }
 
 func NewProvider(dirs ...string) (*viper.Viper, error) {
@@ -27,7 +27,7 @@ func NewProvider(dirs ...string) (*viper.Viper, error) {
 
 	// set default values
 	// common
-	provider.SetDefault("PORT", 8080)
+	provider.SetDefault("ACKSTREAM_EVENTS_LISTEN_ADDRESS", ":8080")
 
 	return provider, nil
 }

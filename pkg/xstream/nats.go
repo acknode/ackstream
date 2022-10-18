@@ -50,7 +50,19 @@ func NewSubject(cfg *Configs, sample *entities.Event) string {
 		segments = append(segments, "*")
 	}
 
-	return strings.Join(segments, ".")
+	var dots []string
+	count := len(segments)
+	for i := count - 1; i >= 0; i-- {
+		if segments[i] == "*" && segments[i-1] == "*" {
+			continue
+		}
+		dots = append(dots, segments[i])
+	}
+	newdots := lo.Reverse[string](dots)
+	if newdots[len(dots)-1] == "*" {
+		newdots[len(dots)-1] = ">"
+	}
+	return strings.Join(newdots, ".")
 }
 
 func NewConnection(ctx context.Context) (*nats.Conn, error) {

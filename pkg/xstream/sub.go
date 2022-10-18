@@ -34,7 +34,6 @@ func NewSub(ctx context.Context) (Sub, error) {
 		logger.Debugw("subscribed", "subject", subject, "queue", queue)
 		return err
 	}, nil
-
 }
 
 func UseSub(ctx context.Context, fn SubscribeFn) nats.MsgHandler {

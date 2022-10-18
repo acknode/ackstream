@@ -32,11 +32,12 @@ func (s *Server) Pub(ctx context.Context, req *protocol.PubReq) (*protocol.PubRe
 		Type:      req.Type,
 		Data:      req.Data,
 	}
-
 	if err := event.WithBucket(s.cfg.BucketTemplate); err != nil {
 		s.logger.Error(err)
 		return nil, err
 	}
+	s.logger.Debugw("got events", "event_key", event.Key(), "data_length", len(req.Data))
+
 	if err := event.WithId(); err != nil {
 		s.logger.Error(err)
 		return nil, err

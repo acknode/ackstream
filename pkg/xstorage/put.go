@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/acknode/ackstream/entities"
 	"github.com/acknode/ackstream/pkg/xlogger"
-	"github.com/vmihailenco/msgpack/v5"
 )
 
 type Put func(event *entities.Event) error
@@ -33,17 +32,11 @@ func NewPut(ctx context.Context) (Put, error) {
 		ql := fmt.Sprintf("INSERT INTO %s (bucket, workspace, app, type, id, data, timestamps) VALUES (?, ?, ?, ?, ?, ?, ?)", cfg.Table)
 		flogger := logger.With("event_key", event.Key(), "ql", ql)
 
-		// because we want to reduce the size of event, so we have to save it as []byte
-		data, err := msgpack.Marshal(event.Data)
-		if err != nil {
-			return err
-		}
 		query := conn.Query(ql,
 			event.Bucket, event.Workspace, event.App, event.Type, event.Id,
-			data,
-			event.Timestamps,
+			event.Data, event.Timestamps,
 		)
-		flogger.Debugw("put event", "data_length", len(data))
+		flogger.Debugw("put event", "data_length", len(event.Data))
 
 		return query.Exec()
 	}, nil

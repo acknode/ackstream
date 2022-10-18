@@ -10,13 +10,7 @@ import (
 
 func NewMsg(cfg *Configs, event *entities.Event) (*nats.Msg, error) {
 	msg := nats.NewMsg(NewSubject(cfg, event))
-
-	// with data
-	data, err := msgpack.Marshal(event.Data)
-	if err != nil {
-		return nil, err
-	}
-	msg.Data = data
+	msg.Data = []byte(event.Data)
 
 	// with metadata
 	msg.Header.Set("Nats-Msg-Id", event.Id)

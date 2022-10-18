@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"context"
-	"fmt"
 	"github.com/acknode/ackstream/app"
 	"github.com/acknode/ackstream/pkg/xlogger"
 	"github.com/acknode/ackstream/services/events"
@@ -45,13 +44,12 @@ func NewServeEvents() *cobra.Command {
 			if err != nil {
 				logger.Fatal(err)
 			}
-			address := fmt.Sprintf("0.0.0.0:%d", cfg.Port)
-			listener, err := net.Listen("tcp", address)
+			listener, err := net.Listen("tcp", cfg.ListenAddress)
 			if err != nil {
 				logger.Fatal(err)
 			}
 
-			logger.Infof("listening... %s", address)
+			logger.Infof("listening... %s", cfg.ListenAddress)
 			ctx, stop := signal.NotifyContext(ctx, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 			defer stop()
 			go func() {
