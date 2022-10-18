@@ -8,49 +8,49 @@ import (
 	"github.com/acknode/ackstream/entities"
 	"github.com/acknode/ackstream/internal/configs"
 	"github.com/acknode/ackstream/services/events/protocol"
+	"go.uber.org/zap"
 	"google.golang.org/grpc/metadata"
-	"log"
 )
 
 type Server struct {
 	protocol.EventsServer
 
-	// our app context, NOT grpc
-	ctx context.Context
-	pub app.Pub
+	logger *zap.SugaredLogger
+	cfg    *configs.Configs
+	pub    app.Pub
 }
 
 func (s *Server) Pub(ctx context.Context, req *protocol.PubReq) (*protocol.PubRes, error) {
 	meta, ok := metadata.FromIncomingContext(ctx)
-	if !ok {
-		meta = metadata.MD{}
+	if ok {
+		s.logger.Debugw("got metadata", "meta", meta)
 	}
-	log.Println(meta)
 
 	event := &entities.Event{
 		Workspace: req.Workspace,
 		App:       req.App,
 		Type:      req.Type,
-	}
-	if err := event.WithData(req.Data); err != nil {
-		return nil, err
+		Data:      req.Data,
 	}
 
-	ascfg := configs.FromContext(s.ctx)
-	if err := event.WithBucket(ascfg.BucketTemplate); err != nil {
+	if err := event.WithBucket(s.cfg.BucketTemplate); err != nil {
+		s.logger.Error(err)
 		return nil, err
 	}
 	if err := event.WithId(); err != nil {
+		s.logger.Error(err)
 		return nil, err
 	}
 
 	if !event.Valid() {
 		msg := fmt.Sprintf("services.events: %s is not valid event", event.Key())
+		s.logger.Error(msg)
 		return nil, errors.New(msg)
 	}
 
 	pubkey, err := s.pub(event)
 	if err != nil {
+		s.logger.Error(err)
 		return nil, err
 	}
 

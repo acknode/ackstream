@@ -3,7 +3,6 @@ package entities
 import (
 	"errors"
 	"github.com/go-playground/validator/v10"
-	"github.com/vmihailenco/msgpack/v5"
 	"strings"
 
 	"github.com/acknode/ackstream/utils"
@@ -21,8 +20,8 @@ type Event struct {
 	Id string `json:"id" validate:"required"`
 
 	// properties
-	Timestamps int64                  `json:"timestamps"`
-	Data       map[string]interface{} `json:"data"`
+	Timestamps int64  `json:"timestamps"`
+	Data       string `json:"data"`
 }
 
 func (event *Event) WithId() error {
@@ -32,17 +31,6 @@ func (event *Event) WithId() error {
 	}
 
 	event.Id = utils.NewId("event")
-	return nil
-}
-
-func (event *Event) WithData(data []byte) error {
-	// only set data if it wasn't set yet
-	if event.Data != nil {
-		return errors.New("data has set already")
-	}
-	if err := msgpack.Unmarshal(data, &event.Data); err != nil {
-		return err
-	}
 	return nil
 }
 

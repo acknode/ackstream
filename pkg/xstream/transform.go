@@ -37,7 +37,6 @@ func NewEvent(msg *nats.Msg) (*entities.Event, error) {
 		Workspace: msg.Header.Get("AckStream-Event-Workspace"),
 		App:       msg.Header.Get("AckStream-Event-App"),
 		Type:      msg.Header.Get("AckStream-Event-Type"),
-		Data:      map[string]interface{}{},
 	}
 
 	if err := msgpack.Unmarshal(msg.Data, &event.Data); err != nil {

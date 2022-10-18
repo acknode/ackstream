@@ -74,9 +74,7 @@ func Chain() func(cmd *cobra.Command, args []string) error {
 }
 
 func parseEventSample(flags *pflag.FlagSet) *entities.Event {
-	event := &entities.Event{
-		Data: map[string]interface{}{},
-	}
+	event := &entities.Event{}
 
 	if bucket, err := flags.GetString("bucket"); err == nil {
 		event.Bucket = bucket

@@ -11,7 +11,7 @@ message PubReq {
   string workspace = 1;
   string app = 2;
   string type = 3;
-  bytes data = 5;
+  string data = 4;
 }
 
 message PubRes {

@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"encoding/json"
 	"github.com/acknode/ackstream/app"
 	"github.com/acknode/ackstream/internal/configs"
 	"github.com/acknode/ackstream/pkg/xlogger"
@@ -34,14 +35,20 @@ func NewPub() *cobra.Command {
 				logger.Fatal(err)
 			}
 
+			data := map[string]interface{}{}
 			props, err := cmd.Flags().GetStringArray("props")
 			if err != nil {
 				logger.Fatal(err)
 			}
 			for _, prop := range props {
 				kv := strings.Split(prop, "=")
-				event.Data[kv[0]] = kv[1]
+				data[kv[0]] = kv[1]
 			}
+			bytes, err := json.Marshal(data)
+			if err != nil {
+				logger.Fatal(err)
+			}
+			event.Data = string(bytes)
 
 			ctx, err := app.Connect(cmd.Context())
 			if err != nil {

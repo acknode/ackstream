@@ -41,16 +41,11 @@ func NewGet(ctx context.Context) (Get, error) {
 
 		query := conn.Query(ql, event.Bucket, event.Workspace, event.App, event.Type, event.Id)
 
-		var data []byte
-		err := query.Scan(&data, &event.Timestamps)
+		err := query.Scan(&event.Data, &event.Timestamps)
 		if err != nil {
 			return nil, err
 		}
 		flogger.Debugw("get entities", "ql", ql, "key", event.Key(), "found", err == nil)
-
-		if err := event.WithData(data); err != nil {
-			return nil, err
-		}
 
 		return &event, nil
 	}, nil
