@@ -7,20 +7,21 @@ import (
 	"github.com/acknode/ackstream/app"
 	"github.com/acknode/ackstream/entities"
 	"github.com/acknode/ackstream/internal/configs"
-	"github.com/acknode/ackstream/services/events/protocol"
+	"github.com/acknode/ackstream/services/events/proto"
 	"go.uber.org/zap"
 	"google.golang.org/grpc/metadata"
+	"os"
 )
 
 type Server struct {
-	protocol.EventsServer
+	proto.EventsServer
 
 	logger *zap.SugaredLogger
 	cfg    *configs.Configs
 	pub    app.Pub
 }
 
-func (s *Server) Pub(ctx context.Context, req *protocol.PubReq) (*protocol.PubRes, error) {
+func (s *Server) Pub(ctx context.Context, req *proto.PubReq) (*proto.PubRes, error) {
 	meta, ok := metadata.FromIncomingContext(ctx)
 	if ok {
 		s.logger.Debugw("got metadata", "meta", meta)
@@ -55,10 +56,19 @@ func (s *Server) Pub(ctx context.Context, req *protocol.PubReq) (*protocol.PubRe
 		return nil, err
 	}
 
-	res := &protocol.PubRes{
+	res := &proto.PubRes{
 		Pubkey:     *pubkey,
 		Bucket:     event.Bucket,
 		Timestamps: event.Timestamps,
+	}
+	return res, nil
+}
+
+func (s *Server) Health(context.Context, *proto.PingReq) (*proto.PingRes, error) {
+	host, _ := os.Hostname()
+	res := &proto.PingRes{
+		Host:    host,
+		Version: s.cfg.Version,
 	}
 	return res, nil
 }

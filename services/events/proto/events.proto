@@ -1,0 +1,35 @@
+syntax = "proto3";
+package proto;
+
+import "google/api/annotations.proto";
+option go_package = "github.com/acknode/ackstream/services/events/proto";
+
+service Events {
+  rpc Health (PingReq) returns (PingRes) {
+    option (google.api.http) = { get: "/health" };
+  }
+
+  rpc Pub (PubReq) returns (PubRes) {
+    option (google.api.http) = { post: "/events/publisher" body: "*" };
+  }
+}
+
+message PingReq {}
+
+message PingRes {
+  string host = 1;
+  string version = 2;
+}
+
+message PubReq {
+  string workspace = 1;
+  string app = 2;
+  string type = 3;
+  string data = 4;
+}
+
+message PubRes {
+  string pubkey = 1;
+  string bucket = 2;
+  int64 timestamps = 3;
+}

@@ -2,9 +2,9 @@
 // versions:
 // - protoc-gen-go-grpc v1.2.0
 // - protoc             v3.6.1
-// source: services/events/protocol/events.proto
+// source: events.proto
 
-package protocol
+package proto
 
 import (
 	context "context"
@@ -22,6 +22,7 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type EventsClient interface {
+	Health(ctx context.Context, in *PingReq, opts ...grpc.CallOption) (*PingRes, error)
 	Pub(ctx context.Context, in *PubReq, opts ...grpc.CallOption) (*PubRes, error)
 }
 
@@ -33,9 +34,18 @@ func NewEventsClient(cc grpc.ClientConnInterface) EventsClient {
 	return &eventsClient{cc}
 }
 
+func (c *eventsClient) Health(ctx context.Context, in *PingReq, opts ...grpc.CallOption) (*PingRes, error) {
+	out := new(PingRes)
+	err := c.cc.Invoke(ctx, "/proto.Events/Health", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *eventsClient) Pub(ctx context.Context, in *PubReq, opts ...grpc.CallOption) (*PubRes, error) {
 	out := new(PubRes)
-	err := c.cc.Invoke(ctx, "/protocol.Events/Pub", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/proto.Events/Pub", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -46,6 +56,7 @@ func (c *eventsClient) Pub(ctx context.Context, in *PubReq, opts ...grpc.CallOpt
 // All implementations must embed UnimplementedEventsServer
 // for forward compatibility
 type EventsServer interface {
+	Health(context.Context, *PingReq) (*PingRes, error)
 	Pub(context.Context, *PubReq) (*PubRes, error)
 	mustEmbedUnimplementedEventsServer()
 }
@@ -54,6 +65,9 @@ type EventsServer interface {
 type UnimplementedEventsServer struct {
 }
 
+func (UnimplementedEventsServer) Health(context.Context, *PingReq) (*PingRes, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Health not implemented")
+}
 func (UnimplementedEventsServer) Pub(context.Context, *PubReq) (*PubRes, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Pub not implemented")
 }
@@ -70,6 +84,24 @@ func RegisterEventsServer(s grpc.ServiceRegistrar, srv EventsServer) {
 	s.RegisterService(&Events_ServiceDesc, srv)
 }
 
+func _Events_Health_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PingReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(EventsServer).Health(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/proto.Events/Health",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(EventsServer).Health(ctx, req.(*PingReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Events_Pub_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(PubReq)
 	if err := dec(in); err != nil {
@@ -80,7 +112,7 @@ func _Events_Pub_Handler(srv interface{}, ctx context.Context, dec func(interfac
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/protocol.Events/Pub",
+		FullMethod: "/proto.Events/Pub",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(EventsServer).Pub(ctx, req.(*PubReq))
@@ -92,14 +124,18 @@ func _Events_Pub_Handler(srv interface{}, ctx context.Context, dec func(interfac
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var Events_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "protocol.Events",
+	ServiceName: "proto.Events",
 	HandlerType: (*EventsServer)(nil),
 	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "Health",
+			Handler:    _Events_Health_Handler,
+		},
 		{
 			MethodName: "Pub",
 			Handler:    _Events_Pub_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "services/events/protocol/events.proto",
+	Metadata: "events.proto",
 }

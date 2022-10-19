@@ -35,15 +35,17 @@ func NewServeEvents() *cobra.Command {
 				}
 			}()
 
+			cfg, err := parseEventsCfg(cmd.Flags())
+			if err != nil {
+				logger.Fatal(err)
+			}
+			ctx = configs.WithContext(ctx, cfg)
+
 			server, err := events.New(ctx)
 			if err != nil {
 				logger.Fatal(err)
 			}
 
-			cfg, err := parseEventsCfg(cmd.Flags())
-			if err != nil {
-				logger.Fatal(err)
-			}
 			listener, err := net.Listen("tcp", cfg.ListenAddress)
 			if err != nil {
 				logger.Fatal(err)
@@ -71,7 +73,7 @@ func NewServeEvents() *cobra.Command {
 			defer cancel()
 
 			go func() {
-				server.GracefulStop()
+				server.Shutdown(ctx)
 				_, _ = app.Disconnect(ctx)
 				<-ctx.Done()
 			}()
