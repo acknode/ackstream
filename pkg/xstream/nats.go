@@ -135,7 +135,6 @@ func NewJetStream(ctx context.Context) (nats.JetStreamContext, error) {
 	if err != nil && errors.Is(err, nats.ErrStreamNotFound) {
 		jscfg := nats.StreamConfig{
 			Name:     name,
-			Storage:  nats.MemoryStorage,
 			Replicas: 3,
 			MaxMsgs:  cfg.MaxMsgs,
 			MaxBytes: cfg.MaxBytes,

@@ -6,6 +6,7 @@ import (
 	"github.com/acknode/ackstream/entities"
 	"github.com/acknode/ackstream/pkg/xlogger"
 	"github.com/nats-io/nats.go"
+	"github.com/samber/lo"
 	"math"
 	"strconv"
 	"time"
@@ -28,11 +29,25 @@ func NewSub(ctx context.Context) (Sub, error) {
 	}
 
 	return func(sample *entities.Event, queue string, fn SubscribeFn) error {
+		if queue == "" {
+			return ErrSubNoQueue
+		}
+
 		subject := NewSubject(cfg, sample)
-		_, err := jsc.QueueSubscribe(subject, queue, UseSub(ctx, fn), nats.DeliverLast())
+
+		opts := map[string]nats.SubOpt{"delivery": nats.DeliverNew()}
+		if cfg.ConsumerPolicy == CONSUMER_POLICY_ALL {
+			opts["delivery"] = nats.DeliverAll()
+		}
+
+		// by default the consumer that is created by QueueSubscribe will be there forever (set durable to TRUE)
+		if _, err := jsc.QueueSubscribe(subject, queue, UseSub(ctx, fn), lo.Values(opts)...); err != nil {
+			logger.Errorw(err.Error(), "subject", subject, "queue", queue)
+			return err
+		}
 
 		logger.Debugw("subscribed", "subject", subject, "queue", queue)
-		return err
+		return nil
 	}, nil
 }
 

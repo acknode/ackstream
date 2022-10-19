@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/acknode/ackstream/entities"
 	"github.com/nats-io/nats.go"
-	"github.com/vmihailenco/msgpack/v5"
 	"strconv"
 )
 
@@ -31,10 +30,7 @@ func NewEvent(msg *nats.Msg) (*entities.Event, error) {
 		Workspace: msg.Header.Get("AckStream-Event-Workspace"),
 		App:       msg.Header.Get("AckStream-Event-App"),
 		Type:      msg.Header.Get("AckStream-Event-Type"),
-	}
-
-	if err := msgpack.Unmarshal(msg.Data, &event.Data); err != nil {
-		return nil, err
+		Data:      string(msg.Data),
 	}
 
 	ts, err := strconv.ParseInt(msg.Header.Get("AckStream-Event-Timestamps"), 10, 64)

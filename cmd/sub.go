@@ -2,10 +2,14 @@ package cmd
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"github.com/acknode/ackstream/app"
 	"github.com/acknode/ackstream/entities"
+	"github.com/acknode/ackstream/internal/configs"
 	"github.com/acknode/ackstream/pkg/xlogger"
 	"github.com/acknode/ackstream/pkg/xstorage"
+	"github.com/acknode/ackstream/utils"
 	"github.com/spf13/cobra"
 	"os"
 	"os/signal"
@@ -20,6 +24,22 @@ func NewSub() *cobra.Command {
 		Example:           "ackstream sub -w ws_default -a app_demo -t cli.trigger -q local",
 		PersistentPreRunE: Chain(),
 		PreRunE: func(cmd *cobra.Command, args []string) error {
+			queuePrefix, err := cmd.Flags().GetString("auto-queue-prefix")
+			if err != nil {
+				return err
+			}
+
+			cfg := configs.FromContext(cmd.Context())
+			if queuePrefix != "" && !cfg.Debug {
+				return errors.New("could not generate queue name if you are in PRODUCTION")
+			}
+			if queuePrefix != "" {
+				queueName := utils.NewId(fmt.Sprintf("queue_%s", queuePrefix))
+				if err := cmd.Flags().Set("queue", queueName); err != nil {
+					return err
+				}
+			}
+
 			migrateDirs, err := cmd.Flags().GetStringArray("migrate-dirs")
 			if err != nil {
 				return err
@@ -83,7 +103,8 @@ func NewSub() *cobra.Command {
 	command.Flags().StringP("workspace", "w", "", " --workspace='': specify which workspace you want to publish an event to")
 	command.Flags().StringP("app", "a", "", "--app='': specify which app you are working with")
 	command.Flags().StringP("type", "t", "", "--type='': specify which type of event you want to use")
-	command.Flags().StringP("queue", "q", "", " --queue='': specify name of your queue. DO NOT USE PRODUCTION QUEUE NAME")
+	command.Flags().StringP("queue", "q", "", " --queue='': specify name of your queue. SHOULD NOT use production queue name")
+	command.Flags().StringP("auto-queue-prefix", "", "", "--auto-queue-prefix='local': auto generate queue name. ONLY use in DEV mode")
 
 	command.Flags().StringArrayP("migrate-dirs", "", []string{}, "migrate resources before start the command")
 
