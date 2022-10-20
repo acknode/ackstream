@@ -40,7 +40,7 @@ func New(ctx context.Context) (*http.Server, error) {
 	}
 
 	srv := &http.Server{
-		Addr: ":8080",
+		Addr: cfg.ListenAddress,
 		Handler: h2c.NewHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			if r.ProtoMajor == 2 && strings.Contains(r.Header.Get("Content-Type"), "application/grpc") {
 				grpcServer.ServeHTTP(w, r)
