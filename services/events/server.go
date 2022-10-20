@@ -7,11 +7,55 @@ import (
 	"github.com/acknode/ackstream/app"
 	"github.com/acknode/ackstream/entities"
 	"github.com/acknode/ackstream/internal/configs"
+	"github.com/acknode/ackstream/pkg/xlogger"
+	eventcfg "github.com/acknode/ackstream/services/events/configs"
 	"github.com/acknode/ackstream/services/events/proto"
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"go.uber.org/zap"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/reflection"
+	"net/http"
 	"os"
 )
+
+func NewGRPCServer(ctx context.Context) (*grpc.Server, error) {
+	pub, err := app.NewPub(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	grpcServer := grpc.NewServer()
+	proto.RegisterEventsServer(grpcServer, &Server{
+		logger: xlogger.FromContext(ctx),
+		cfg:    configs.FromContext(ctx),
+		pub:    pub,
+	})
+	reflection.Register(grpcServer)
+
+	return grpcServer, nil
+}
+
+func NewHTTPServer(ctx context.Context) (*http.Server, error) {
+	cfg := eventcfg.FromContext(ctx)
+
+	mux := runtime.NewServeMux()
+	opts := []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}
+	err := proto.RegisterEventsHandlerFromEndpoint(ctx, mux, cfg.GRPCListenAddress, opts)
+	if err != nil {
+		return nil, err
+	}
+
+	srv := &http.Server{
+		Addr: cfg.HTTPListenAddress,
+		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			mux.ServeHTTP(w, r)
+		}),
+	}
+
+	return srv, nil
+}
 
 type Server struct {
 	proto.EventsServer
@@ -64,9 +108,9 @@ func (s *Server) Pub(ctx context.Context, req *proto.PubReq) (*proto.PubRes, err
 	return res, nil
 }
 
-func (s *Server) Health(context.Context, *proto.PingReq) (*proto.PingRes, error) {
+func (s *Server) Health(context.Context, *proto.HealthReq) (*proto.HealthRes, error) {
 	host, _ := os.Hostname()
-	res := &proto.PingRes{
+	res := &proto.HealthRes{
 		Host:    host,
 		Version: s.cfg.Version,
 	}

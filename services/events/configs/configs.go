@@ -6,8 +6,8 @@ import (
 )
 
 type Configs struct {
-	ListenAddress string `json:"listen_address" mapstructure:"ACKSTREAM_EVENTS_LISTEN_ADDRESS"`
-	CertsDir      string `json:"certs_dir" mapstructure:"ACKSTREAM_EVENTS_CERTS_DIR"`
+	HTTPListenAddress string `json:"http_listen_address_listen_address" mapstructure:"ACKSTREAM_EVENTS_HTTP_LISTEN_ADDRESS"`
+	GRPCListenAddress string `json:"grpc_listen_address" mapstructure:"ACKSTREAM_EVENTS_GRPC_LISTEN_ADDRESS"`
 }
 
 func NewProvider(dirs ...string) (*viper.Viper, error) {
@@ -28,7 +28,8 @@ func NewProvider(dirs ...string) (*viper.Viper, error) {
 
 	// set default values
 	// common
-	provider.SetDefault("ACKSTREAM_EVENTS_LISTEN_ADDRESS", ":8080")
+	provider.SetDefault("ACKSTREAM_EVENTS_HTTP_LISTEN_ADDRESS", ":8080")
+	provider.SetDefault("ACKSTREAM_EVENTS_GRPC_LISTEN_ADDRESS", ":8081")
 
 	return provider, nil
 }

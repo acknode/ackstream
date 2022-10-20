@@ -32,7 +32,7 @@ var _ = utilities.NewDoubleArray
 var _ = metadata.Join
 
 func request_Events_Health_0(ctx context.Context, marshaler runtime.Marshaler, client EventsClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq PingReq
+	var protoReq HealthReq
 	var metadata runtime.ServerMetadata
 
 	msg, err := client.Health(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
@@ -41,7 +41,7 @@ func request_Events_Health_0(ctx context.Context, marshaler runtime.Marshaler, c
 }
 
 func local_request_Events_Health_0(ctx context.Context, marshaler runtime.Marshaler, server EventsServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq PingReq
+	var protoReq HealthReq
 	var metadata runtime.ServerMetadata
 
 	msg, err := server.Health(ctx, &protoReq)

@@ -5,7 +5,7 @@ import "google/api/annotations.proto";
 option go_package = "github.com/acknode/ackstream/services/events/proto";
 
 service Events {
-  rpc Health (PingReq) returns (PingRes) {
+  rpc Health (HealthReq) returns (HealthRes) {
     option (google.api.http) = { get: "/health" };
   }
 
@@ -14,9 +14,9 @@ service Events {
   }
 }
 
-message PingReq {}
+message HealthReq {}
 
-message PingRes {
+message HealthRes {
   string host = 1;
   string version = 2;
 }

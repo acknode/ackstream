@@ -41,26 +41,42 @@ func NewServeEvents() *cobra.Command {
 			}
 			ctx = configs.WithContext(ctx, cfg)
 
-			server, err := events.New(ctx)
-			if err != nil {
-				logger.Fatal(err)
-			}
-
-			listener, err := net.Listen("tcp", cfg.ListenAddress)
-			if err != nil {
-				logger.Fatal(err)
-			}
-
-			logger.Infof("listening... %s", cfg.ListenAddress)
 			ctx, stop := signal.NotifyContext(ctx, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 			defer stop()
+
+			gRPCServer, httpServer, err := events.NewServers(ctx)
+			if err != nil {
+				logger.Fatal(err)
+			}
+
 			go func() {
-				if err := server.Serve(listener); err != nil {
+				listener, err := net.Listen("tcp", cfg.GRPCListenAddress)
+				if err != nil {
 					logger.Fatal(err)
 				}
-				if err := utils.WithHealthCheck("/tmp/ackstream.services.events"); err != nil {
+
+				if err := gRPCServer.Serve(listener); err != nil {
 					logger.Fatal(err)
 				}
+
+				if err := utils.WithHealthCheck("/tmp/ackstream.services.events.grpc"); err != nil {
+					logger.Fatal(err)
+				}
+
+				logger.Infow("started gRPC", "endpoint", listener.Addr().String())
+			}()
+
+			go func() {
+				listener, err := net.Listen("tcp", cfg.HTTPListenAddress)
+				if err != nil {
+					logger.Fatal(err)
+				}
+
+				if err = httpServer.Serve(listener); err != nil {
+					logger.Fatal(err)
+				}
+
+				logger.Infow("started HTTP", "endpoint", listener.Addr().String())
 			}()
 
 			// Listen for the interrupt signal.
@@ -69,13 +85,16 @@ func NewServeEvents() *cobra.Command {
 			logger.Info("shutting down gracefully, press Ctrl+C again to force")
 			// The context is used to inform the server it has 5 seconds to finish
 			// the request it is currently handling
-			ctx, cancel := context.WithTimeout(ctx, 7*time.Second)
+			ctx, cancel := context.WithTimeout(ctx, 11*time.Second)
 			defer cancel()
 
 			go func() {
-				if err := server.Shutdown(ctx); err != nil {
+				gRPCServer.GracefulStop()
+
+				if err := httpServer.Shutdown(ctx); err != nil {
 					logger.Error(err)
 				}
+
 				if _, err = app.Disconnect(ctx); err != nil {
 					logger.Error(err)
 				}

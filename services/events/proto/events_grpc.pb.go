@@ -22,7 +22,7 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type EventsClient interface {
-	Health(ctx context.Context, in *PingReq, opts ...grpc.CallOption) (*PingRes, error)
+	Health(ctx context.Context, in *HealthReq, opts ...grpc.CallOption) (*HealthRes, error)
 	Pub(ctx context.Context, in *PubReq, opts ...grpc.CallOption) (*PubRes, error)
 }
 
@@ -34,8 +34,8 @@ func NewEventsClient(cc grpc.ClientConnInterface) EventsClient {
 	return &eventsClient{cc}
 }
 
-func (c *eventsClient) Health(ctx context.Context, in *PingReq, opts ...grpc.CallOption) (*PingRes, error) {
-	out := new(PingRes)
+func (c *eventsClient) Health(ctx context.Context, in *HealthReq, opts ...grpc.CallOption) (*HealthRes, error) {
+	out := new(HealthRes)
 	err := c.cc.Invoke(ctx, "/proto.Events/Health", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -56,7 +56,7 @@ func (c *eventsClient) Pub(ctx context.Context, in *PubReq, opts ...grpc.CallOpt
 // All implementations must embed UnimplementedEventsServer
 // for forward compatibility
 type EventsServer interface {
-	Health(context.Context, *PingReq) (*PingRes, error)
+	Health(context.Context, *HealthReq) (*HealthRes, error)
 	Pub(context.Context, *PubReq) (*PubRes, error)
 	mustEmbedUnimplementedEventsServer()
 }
@@ -65,7 +65,7 @@ type EventsServer interface {
 type UnimplementedEventsServer struct {
 }
 
-func (UnimplementedEventsServer) Health(context.Context, *PingReq) (*PingRes, error) {
+func (UnimplementedEventsServer) Health(context.Context, *HealthReq) (*HealthRes, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Health not implemented")
 }
 func (UnimplementedEventsServer) Pub(context.Context, *PubReq) (*PubRes, error) {
@@ -85,7 +85,7 @@ func RegisterEventsServer(s grpc.ServiceRegistrar, srv EventsServer) {
 }
 
 func _Events_Health_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(PingReq)
+	in := new(HealthReq)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -97,7 +97,7 @@ func _Events_Health_Handler(srv interface{}, ctx context.Context, dec func(inter
 		FullMethod: "/proto.Events/Health",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(EventsServer).Health(ctx, req.(*PingReq))
+		return srv.(EventsServer).Health(ctx, req.(*HealthReq))
 	}
 	return interceptor(ctx, in, info, handler)
 }
