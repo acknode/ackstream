@@ -73,8 +73,12 @@ func NewServeEvents() *cobra.Command {
 			defer cancel()
 
 			go func() {
-				server.Shutdown(ctx)
-				_, _ = app.Disconnect(ctx)
+				if err := server.Shutdown(ctx); err != nil {
+					logger.Error(err)
+				}
+				if _, err = app.Disconnect(ctx); err != nil {
+					logger.Error(err)
+				}
 				<-ctx.Done()
 			}()
 		},

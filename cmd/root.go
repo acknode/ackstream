@@ -4,6 +4,7 @@ import (
 	"github.com/acknode/ackstream/entities"
 	"github.com/acknode/ackstream/internal/configs"
 	"github.com/acknode/ackstream/pkg/xlogger"
+	"github.com/acknode/ackstream/pkg/xstorage"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
@@ -23,13 +24,19 @@ func New() *cobra.Command {
 			ctx = xlogger.WithContext(ctx, logger)
 
 			cmd.SetContext(ctx)
-			return nil
+
+			migrateDirs, err := cmd.Flags().GetStringArray("migrate-dirs")
+			if err != nil {
+				return err
+			}
+			return xstorage.Migrate(cmd.Context(), migrateDirs)
 		},
 		ValidArgs: []string{"get", "pub", "sub"},
 	}
 
 	command.PersistentFlags().StringArrayP("configs-dirs", "c", []string{".", "./secrets"}, "path/to/config/file")
 	command.PersistentFlags().StringArrayP("set", "s", []string{}, "override values in config file")
+	command.PersistentFlags().StringArrayP("migrate-dirs", "", []string{}, "migrate resources before start the command")
 
 	command.AddCommand(NewMigrate())
 	command.AddCommand(NewGet())

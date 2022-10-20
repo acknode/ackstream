@@ -12,5 +12,6 @@ func NewServe() *cobra.Command {
 	}
 
 	command.AddCommand(NewServeEvents())
+
 	return command
 }

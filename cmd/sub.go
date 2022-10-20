@@ -8,7 +8,6 @@ import (
 	"github.com/acknode/ackstream/entities"
 	"github.com/acknode/ackstream/internal/configs"
 	"github.com/acknode/ackstream/pkg/xlogger"
-	"github.com/acknode/ackstream/pkg/xstorage"
 	"github.com/acknode/ackstream/utils"
 	"github.com/spf13/cobra"
 	"os"
@@ -40,11 +39,7 @@ func NewSub() *cobra.Command {
 				}
 			}
 
-			migrateDirs, err := cmd.Flags().GetStringArray("migrate-dirs")
-			if err != nil {
-				return err
-			}
-			return xstorage.Migrate(cmd.Context(), migrateDirs)
+			return nil
 		},
 		Run: func(cmd *cobra.Command, args []string) {
 			logger := xlogger.FromContext(cmd.Context()).With("cli.fn", "sub")
@@ -94,7 +89,9 @@ func NewSub() *cobra.Command {
 			defer cancel()
 
 			go func() {
-				_, _ = app.Disconnect(ctx)
+				if _, err = app.Disconnect(ctx); err != nil {
+					logger.Error(err)
+				}
 				<-ctx.Done()
 			}()
 		},
@@ -105,8 +102,6 @@ func NewSub() *cobra.Command {
 	command.Flags().StringP("type", "t", "", "--type='': specify which type of event you want to use")
 	command.Flags().StringP("queue", "q", "", " --queue='': specify name of your queue. SHOULD NOT use production queue name")
 	command.Flags().StringP("auto-queue-prefix", "", "", "--auto-queue-prefix='local': auto generate queue name. ONLY use in DEV mode")
-
-	command.Flags().StringArrayP("migrate-dirs", "", []string{}, "migrate resources before start the command")
 
 	return command
 }

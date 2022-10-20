@@ -1,1 +1,1 @@
-subjectAltName=DNS:*.acknode.com,IP:127.0.0.1
+subjectAltName=DNS:*.acknode.com,IP:0.0.0.0

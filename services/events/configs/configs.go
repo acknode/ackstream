@@ -7,6 +7,7 @@ import (
 
 type Configs struct {
 	ListenAddress string `json:"listen_address" mapstructure:"ACKSTREAM_EVENTS_LISTEN_ADDRESS"`
+	CertsDir      string `json:"certs_dir" mapstructure:"ACKSTREAM_EVENTS_CERTS_DIR"`
 }
 
 func NewProvider(dirs ...string) (*viper.Viper, error) {

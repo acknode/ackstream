@@ -7,13 +7,13 @@ import (
 	"github.com/acknode/ackstream/pkg/xlogger"
 	eventcfg "github.com/acknode/ackstream/services/events/configs"
 	"github.com/acknode/ackstream/services/events/proto"
+	"github.com/acknode/ackstream/utils"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"net/http"
-	"strings"
 )
 
 func New(ctx context.Context) (*http.Server, error) {
@@ -23,15 +23,19 @@ func New(ctx context.Context) (*http.Server, error) {
 	}
 
 	logger := xlogger.FromContext(ctx)
+	cfg := eventcfg.FromContext(ctx)
 
-	grpcServer := grpc.NewServer()
+	grpcServer, err := utils.NewGRPCServer(cfg.CertsDir)
+	if err != nil {
+		return nil, err
+	}
+
 	proto.RegisterEventsServer(grpcServer, &Server{
 		logger: logger,
 		cfg:    configs.FromContext(ctx),
 		pub:    pub,
 	})
 
-	cfg := eventcfg.FromContext(ctx)
 	mux := runtime.NewServeMux()
 	opts := []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}
 	err = proto.RegisterEventsHandlerFromEndpoint(ctx, mux, cfg.ListenAddress, opts)
@@ -42,7 +46,8 @@ func New(ctx context.Context) (*http.Server, error) {
 	srv := &http.Server{
 		Addr: cfg.ListenAddress,
 		Handler: h2c.NewHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			if r.ProtoMajor == 2 && strings.Contains(r.Header.Get("Content-Type"), "application/grpc") {
+			isGRPC := r.Header.Get("Content-Type") == "application/grpc"
+			if r.ProtoMajor == 2 && isGRPC {
 				grpcServer.ServeHTTP(w, r)
 			} else {
 				mux.ServeHTTP(w, r)
