@@ -8,7 +8,7 @@ echo "$NOW" > .version
 git add .version && git commit -m "ci($NOW): ✨🐛🚨"
 
 TARGET=${1:-origin}
-printf "\n---------------------------"
+echo "---------------------------"
 printf "Pushing... NOW --> %s" "$TARGET"
-printf "---------------------------\n"
+echo "---------------------------"
 git push "$TARGET"
