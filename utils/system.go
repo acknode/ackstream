@@ -4,6 +4,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"time"
 )
 
 func IsDebug(key string) bool {
@@ -25,5 +26,5 @@ func ScanFiles(root, ext string) ([]string, error) {
 }
 
 func WithHealthCheck(keyPath string) error {
-	return os.WriteFile(keyPath, []byte("Healthy"), 0644)
+	return os.WriteFile(keyPath, []byte(time.Now().Format(time.RFC3339)), 0644)
 }

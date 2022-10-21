@@ -54,30 +54,27 @@ func NewServeEvents() *cobra.Command {
 				if err != nil {
 					logger.Fatal(err)
 				}
-
 				if err := gRPCServer.Serve(listener); err != nil {
 					logger.Fatal(err)
 				}
-
-				if err := utils.WithHealthCheck("/tmp/ackstream.services.events.grpc"); err != nil {
-					logger.Fatal(err)
-				}
-
-				logger.Infow("started gRPC", "endpoint", listener.Addr().String())
 			}()
+			logger.Infow("started gRPC", "endpoint", cfg.GRPCListenAddress)
 
 			go func() {
 				listener, err := net.Listen("tcp", cfg.HTTPListenAddress)
 				if err != nil {
 					logger.Fatal(err)
 				}
-
 				if err = httpServer.Serve(listener); err != nil {
 					logger.Fatal(err)
 				}
-
-				logger.Infow("started HTTP", "endpoint", listener.Addr().String())
 			}()
+			logger.Infow("started HTTP", "endpoint", cfg.HTTPListenAddress)
+
+			if err := utils.WithHealthCheck(events.HEALTHCHECK_FILEPATH); err != nil {
+				logger.Fatal(err)
+			}
+			logger.Infow("set healthcheck", "filepath", events.HEALTHCHECK_FILEPATH)
 
 			// Listen for the interrupt signal.
 			<-ctx.Done()

@@ -6,6 +6,8 @@ import (
 	"net/http"
 )
 
+var HEALTHCHECK_FILEPATH = "/tmp/ackstream.services.events.grpc"
+
 func NewServers(ctx context.Context) (*grpc.Server, *http.Server, error) {
 	gRPCServer, err := NewGRPCServer(ctx)
 	if err != nil {
