@@ -9,6 +9,6 @@ git add .version && git commit -m "ci($NOW): ✨🐛🚨"
 
 TARGET=${1:-origin}
 echo "---------------------------"
-printf "Pushing... NOW --> %s" "$TARGET"
+printf "Pushing... $NOW --> %s\n" "$TARGET"
 echo "---------------------------"
 git push "$TARGET"
