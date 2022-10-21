@@ -10,7 +10,7 @@ func NewCall() *cobra.Command {
 		Short:             "call remote APIs",
 		Example:           "ackstream call events",
 		ValidArgs:         []string{"events"},
-		PersistentPreRunE: Chain(),
+		PersistentPreRunE: UseChain(),
 	}
 
 	command.AddCommand(NewCallEvents())

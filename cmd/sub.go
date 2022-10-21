@@ -21,7 +21,7 @@ func NewSub() *cobra.Command {
 		Use:               "sub -w WORKSPACE -a APP -t TYPE -q QUEUE_NAME",
 		Short:             "subscribe event on stream",
 		Example:           "ackstream sub -w ws_default -a app_demo -t cli.trigger -q local",
-		PersistentPreRunE: Chain(),
+		PersistentPreRunE: UseChain(),
 		PreRunE: func(cmd *cobra.Command, args []string) error {
 			queuePrefix, err := cmd.Flags().GetString("auto-queue-prefix")
 			if err != nil {

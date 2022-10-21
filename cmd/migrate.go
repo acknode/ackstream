@@ -12,7 +12,7 @@ func NewMigrate() *cobra.Command {
 		Short:             "run migration for our storage",
 		Example:           "ackstream migrate ./migrate",
 		Args:              cobra.MinimumNArgs(1),
-		PersistentPreRunE: Chain(),
+		PersistentPreRunE: UseChain(),
 		Run: func(cmd *cobra.Command, args []string) {
 			logger := xlogger.FromContext(cmd.Context()).With("cli.fn", "migrate")
 

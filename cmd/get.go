@@ -8,7 +8,7 @@ func NewGet() *cobra.Command {
 		Short:             "display one or many resources",
 		Example:           "ackstream get system",
 		ValidArgs:         []string{"system"},
-		PersistentPreRunE: Chain(),
+		PersistentPreRunE: UseChain(),
 	}
 
 	command.AddCommand(NewGetSystem())

@@ -12,7 +12,7 @@ func NewGetSystem() *cobra.Command {
 		Use:               "system",
 		Short:             "show system information & configuration",
 		Example:           "ackstream get system",
-		PersistentPreRunE: Chain(),
+		PersistentPreRunE: UseChain(),
 		Run: func(cmd *cobra.Command, args []string) {
 			cfg := configs.FromContext(cmd.Context())
 

@@ -18,12 +18,29 @@ import (
 
 func NewServeEvents() *cobra.Command {
 	command := &cobra.Command{
-		Use:               "events",
-		Short:             "serve events service",
-		Example:           "ackstream serve events",
-		PersistentPreRunE: Chain(),
-		Run: func(cmd *cobra.Command, args []string) {
+		Use:     "events",
+		Short:   "serve events service",
+		Example: "ackstream serve events",
+		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+			chain := UseChain()
+			if err := chain(cmd, args); err != nil {
+				return err
+			}
+
 			logger := xlogger.FromContext(cmd.Context()).With("cli.fn", "serve.events")
+			cfg, err := parseEventsCfg(cmd.Flags())
+			if err != nil {
+				logger.Fatal(err)
+			}
+			ctx := configs.WithContext(cmd.Context(), cfg)
+			cmd.SetContext(ctx)
+			return nil
+		},
+		Run: func(cmd *cobra.Command, args []string) {
+			cfg := configs.FromContext(cmd.Context())
+			logger := xlogger.FromContext(cmd.Context()).
+				With("cli.fn", "serve.events").
+				With("events.grpc_listen_address", cfg.GRPCListenAddress)
 
 			ctx, err := app.Connect(cmd.Context())
 			if err != nil {
@@ -35,16 +52,10 @@ func NewServeEvents() *cobra.Command {
 				}
 			}()
 
-			cfg, err := parseEventsCfg(cmd.Flags())
-			if err != nil {
-				logger.Fatal(err)
-			}
-			ctx = configs.WithContext(ctx, cfg)
-
 			ctx, stop := signal.NotifyContext(ctx, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 			defer stop()
 
-			gRPCServer, httpServer, err := events.NewServers(ctx)
+			server, err := events.NewServer(ctx)
 			if err != nil {
 				logger.Fatal(err)
 			}
@@ -54,22 +65,11 @@ func NewServeEvents() *cobra.Command {
 				if err != nil {
 					logger.Fatal(err)
 				}
-				if err := gRPCServer.Serve(listener); err != nil {
+				if err := server.Serve(listener); err != nil {
 					logger.Fatal(err)
 				}
 			}()
 			logger.Infow("started gRPC", "endpoint", cfg.GRPCListenAddress)
-
-			go func() {
-				listener, err := net.Listen("tcp", cfg.HTTPListenAddress)
-				if err != nil {
-					logger.Fatal(err)
-				}
-				if err = httpServer.Serve(listener); err != nil {
-					logger.Fatal(err)
-				}
-			}()
-			logger.Infow("started HTTP", "endpoint", cfg.HTTPListenAddress)
 
 			if err := utils.WithHealthCheck(events.HEALTHCHECK_FILEPATH); err != nil {
 				logger.Fatal(err)
@@ -86,11 +86,7 @@ func NewServeEvents() *cobra.Command {
 			defer cancel()
 
 			go func() {
-				gRPCServer.GracefulStop()
-
-				if err := httpServer.Shutdown(ctx); err != nil {
-					logger.Error(err)
-				}
+				server.GracefulStop()
 
 				if _, err = app.Disconnect(ctx); err != nil {
 					logger.Error(err)

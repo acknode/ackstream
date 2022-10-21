@@ -12,7 +12,7 @@ func NewGetEvents() *cobra.Command {
 		Use:               "events",
 		Short:             "get events",
 		Example:           "ackstream get events -b 20220202 -w ws_default -a app_demo -t cli.trigger -i event_2GGUfVU4bQUcJOvBpNA9AJzQ2zI",
-		PersistentPreRunE: Chain(),
+		PersistentPreRunE: UseChain(),
 		Run: func(cmd *cobra.Command, args []string) {
 			logger := xlogger.FromContext(cmd.Context()).With("cli.fn", "get.events")
 

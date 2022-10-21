@@ -8,7 +8,7 @@ func NewServe() *cobra.Command {
 		Short:             "serve a service",
 		Example:           "ackstream serve events",
 		ValidArgs:         []string{"events"},
-		PersistentPreRunE: Chain(),
+		PersistentPreRunE: UseChain(),
 	}
 
 	command.AddCommand(NewServeEvents())

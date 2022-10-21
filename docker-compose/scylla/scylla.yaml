@@ -746,7 +746,7 @@ commitlog_total_space_in_mb: -1
 
 # Enable or disable tcp_nodelay for inter-dc communication.
 # Disabling it will result in larger (but fewer) network packets being sent,
-# reducing overhead from the TCP proto itself, at the cost of increasing
+# reducing overhead from the TCP protos itself, at the cost of increasing
 # latency if you block for cross-datacenter responses.
 # inter_dc_tcp_nodelay: false
 

@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"github.com/acknode/ackstream/entities"
 	"github.com/acknode/ackstream/internal/configs"
 	"github.com/acknode/ackstream/pkg/xlogger"
 	"github.com/acknode/ackstream/pkg/xstorage"
@@ -71,7 +70,7 @@ func WithConfigs(flags *pflag.FlagSet) (*configs.Configs, error) {
 	return cfg, nil
 }
 
-func Chain() func(cmd *cobra.Command, args []string) error {
+func UseChain() func(cmd *cobra.Command, args []string) error {
 	return func(cmd *cobra.Command, args []string) error {
 		parent := cmd.Parent()
 		err := parent.PersistentPreRunE(parent, args)
@@ -79,26 +78,4 @@ func Chain() func(cmd *cobra.Command, args []string) error {
 		cmd.SetContext(parent.Context())
 		return err
 	}
-}
-
-func parseEventSample(flags *pflag.FlagSet) *entities.Event {
-	event := &entities.Event{}
-
-	if bucket, err := flags.GetString("bucket"); err == nil {
-		event.Bucket = bucket
-	}
-	if ws, err := flags.GetString("workspace"); err == nil {
-		event.Workspace = ws
-	}
-	if app, err := flags.GetString("app"); err == nil {
-		event.App = app
-	}
-	if etype, err := flags.GetString("type"); err == nil {
-		event.Type = etype
-	}
-	if id, err := flags.GetString("id"); err == nil {
-		event.Id = id
-	}
-
-	return event
 }

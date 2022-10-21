@@ -1,17 +1,12 @@
 syntax = "proto3";
 package proto;
 
-import "google/api/annotations.proto";
-option go_package = "github.com/acknode/ackstream/services/events/proto";
+option go_package = "github.com/acknode/ackstream/services/events/protos";
 
 service Events {
-  rpc Health (HealthReq) returns (HealthRes) {
-    option (google.api.http) = { get: "/health" };
-  }
+  rpc Health (HealthReq) returns (HealthRes) {}
 
-  rpc Pub (PubReq) returns (PubRes) {
-    option (google.api.http) = { post: "/events/publisher" body: "*" };
-  }
+  rpc Pub (PubReq) returns (PubRes) {}
 }
 
 message HealthReq {}
