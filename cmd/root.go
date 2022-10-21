@@ -43,6 +43,7 @@ func New() *cobra.Command {
 	command.AddCommand(NewPub())
 	command.AddCommand(NewSub())
 	command.AddCommand(NewServe())
+	command.AddCommand(NewCall())
 
 	return command
 }
