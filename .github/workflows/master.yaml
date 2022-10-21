@@ -20,26 +20,25 @@ jobs:
       # Get values for cache paths to be used in later steps
       - id: go-cache-paths
         run: |
-          echo "::set-output name=go-build::$(go env GOCACHE)"
-          echo "::set-output name=go-mod::$(go env GOMODCACHE)"
+          echo "GOCACHE_PATH=$(go env GOCACHE)" >> $GITHUB_OUTPUT
+          echo "GOMODCACHE_PATH=$(go env GOMODCACHE)" >> $GITHUB_OUTPUT
 
       # Cache go build cache, used to speedup go test
       - name: cache build
         uses: actions/cache@v2
         with:
-          path: ${{ steps.go-cache-paths.outputs.go-build }}
+          path: ${{ steps.go-cache-paths.outputs.GOCACHE_PATH }}
           key: ${{ runner.os }}-go-build-${{ hashFiles('**/go.sum') }}
 
       # Cache go mod cache, used to speedup builds
       - name: cache mod
         uses: actions/cache@v2
         with:
-          path: ${{ steps.go-cache-paths.outputs.go-mod }}
+          path: ${{ steps.go-cache-paths.outputs.GOMODCACHE_PATH }}
           key: ${{ runner.os }}-go-mod-${{ hashFiles('**/go.sum') }}
 
       - name: install dependencies
         run: |
-          echo "machine github.com login ${{ secrets.UPMESH_GITHUB_USER }} password ${{ secrets.UPMESH_GITHUB_TOKEN }}" > $HOME/.netrc
           go get
           go version
 
@@ -62,14 +61,14 @@ jobs:
         env:
           ECR_USERNAME: ${{ secrets.ECR_USERNAME }}
         if: "${{ env.ECR_USERNAME != '' }}"
-        run: echo "::set-output name=ENABLED::true"
+        run: echo "ENABLED=true" >> $GITHUB_OUTPUT
 
       - id: BUILD_ID
         run: |
           branch=${GITHUB_REF##*/}
           sha=${GITHUB_SHA::8}
           ts=$(date +%s)
-          echo "::set-output name=ID::stg-${sha}-${ts}"
+          echo "ID=stg-${sha}-${ts}" >> $GITHUB_OUTPUT
 
   ecr:
     runs-on: ubuntu-latest
