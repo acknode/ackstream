@@ -16,4 +16,5 @@
 
 # project
 secrets
-.srl
+bin
+!bin/.gitignore
