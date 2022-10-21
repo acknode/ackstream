@@ -16,8 +16,8 @@
 
 # project
 secrets
-bin
 !bin/.gitignore
+bin
 
 # IDE
 .idea
