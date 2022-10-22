@@ -1,5 +1,5 @@
 syntax = "proto3";
-package proto;
+package protos;
 
 option go_package = "github.com/acknode/ackstream/services/events/protos";
 
