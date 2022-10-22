@@ -1,9 +1,9 @@
-#!/bin/sh
+#!/bin/bash
 
 set -e
 
 NOW=$(date +%Y.%-m%d.%-H%M)
-echo "$NOW" > .version
+echo -n "$NOW" > .version
 
 git add .version && git commit -m "ci($NOW): ✨🐛🚨"
 
