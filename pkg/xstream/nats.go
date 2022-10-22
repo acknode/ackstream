@@ -8,6 +8,7 @@ import (
 	"github.com/gosimple/slug"
 	"github.com/nats-io/nats.go"
 	"github.com/samber/lo"
+	"os"
 	"strings"
 	"time"
 )
@@ -77,7 +78,12 @@ func NewConnection(ctx context.Context) (*nats.Conn, error) {
 		With("xstream.name", cfg.Name).
 		With("xstream.topic", cfg.Topic)
 
+	hostname, err := os.Hostname()
+	if err != nil {
+		return nil, err
+	}
 	opts := []nats.Option{
+		nats.Name(hostname),
 		nats.ReconnectWait(3 * time.Second),
 		nats.Timeout(3 * time.Second),
 		nats.DisconnectErrHandler(func(c *nats.Conn, err error) {
