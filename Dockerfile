@@ -14,6 +14,7 @@ RUN go build -o ./bin/ackstream -buildvcs=false
 FROM alpine:3
 WORKDIR /app
 
+COPY --from=build /app/migrate ./migrate
 COPY --from=build /app/configs.props.example ./secrets/configs.props
 COPY --from=build /app/.version ./.version
 COPY --from=build /app/bin/ackstream ./ackstream
