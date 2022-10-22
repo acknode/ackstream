@@ -22,10 +22,22 @@ func NewServer(ctx context.Context) (*grpc.Server, error) {
 		return nil, err
 	}
 
-	server := grpc.NewServer()
+	logger := xlogger.FromContext(ctx)
+	cfg := configs.FromContext(ctx)
+
+	server := grpc.NewServer(
+		grpc.UnaryInterceptor(
+			func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
+				logger.Debugw("request.method", info.FullMethod)
+				resp, err = handler(ctx, req)
+
+				return
+			},
+		),
+	)
 	protos.RegisterEventsServer(server, &Server{
-		logger: xlogger.FromContext(ctx),
-		cfg:    configs.FromContext(ctx),
+		logger: logger,
+		cfg:    cfg,
 		pub:    pub,
 	})
 	reflection.Register(server)
