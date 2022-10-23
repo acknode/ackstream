@@ -4,11 +4,11 @@ import (
 	"context"
 	"github.com/acknode/ackstream/app"
 	"github.com/acknode/ackstream/internal/configs"
-	"sync"
 	"testing"
+	"time"
 )
 
-func BenchmarkPub(b *testing.B) {
+func BenchmarkTestPub(b *testing.B) {
 	ctx := context.Background()
 
 	ctx, _ = WithConfigs(ctx)
@@ -22,14 +22,12 @@ func BenchmarkPub(b *testing.B) {
 
 	cfg := configs.FromContext(ctx)
 
-	var wg sync.WaitGroup
-	for i := 0; i < b.N; i++ {
-		wg.Add(1)
-		go func() {
-			event := GenEvent(cfg, i)
+	ts := time.Now().UnixNano()
+	b.ResetTimer()
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			event := GenEvent(cfg, ts)
 			_, _ = pub(event)
-			wg.Done()
-		}()
-	}
-	wg.Wait()
+		}
+	})
 }

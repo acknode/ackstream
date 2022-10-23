@@ -22,7 +22,7 @@ func WithConfigs(ctx context.Context) (context.Context, error) {
 		return ctx, err
 	}
 
-	cfg, err := configs.New(provider, []string{"ACKSTREAM_ENV=dev"})
+	cfg, err := configs.New(provider, []string{"ACKSTREAM_ENV=test"})
 	if err != nil {
 		return ctx, err
 	}
@@ -36,12 +36,12 @@ func WithLogger(ctx context.Context) (context.Context, error) {
 	return xlogger.WithContext(ctx, logger), nil
 }
 
-func GenEvent(cfg *configs.Configs, i int) *entities.Event {
+func GenEvent(cfg *configs.Configs, ts int64) *entities.Event {
 	event := &entities.Event{
 		Workspace: utils.NewId("ws"),
 		App:       utils.NewId("app"),
 		Type:      utils.NewId("type"),
-		Data:      fmt.Sprintf(`{"i": %d}`, i),
+		Data:      fmt.Sprintf(`{"ts": %d}`, ts),
 	}
 	_ = event.WithId()
 	_ = event.WithBucket(cfg.BucketTemplate)
