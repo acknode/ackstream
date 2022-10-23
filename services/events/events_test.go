@@ -34,6 +34,7 @@ func BenchmarkTestEventsPub(b *testing.B) {
 
 	ts := time.Now().UnixNano()
 	b.ResetTimer()
+	b.SetParallelism(100)
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
 			req := &protos.PubReq{

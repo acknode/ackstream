@@ -2,9 +2,9 @@
 
 set -e
 
-BENCHTIME=${BENCHTIME:-"3m"}
+BENCHTIME=${BENCHTIME:-"100000x"}
 
-go test -bench=. -cpu 2 -parallel  10 -benchmem -benchtime "$BENCHTIME" -v github.com/acknode/ackstream/app github.com/acknode/ackstream/services/events > ./tests/benchplots/out.data
+go test -bench=. -cpu 2 -benchmem -benchtime "$BENCHTIME" -v  github.com/acknode/ackstream/services/events github.com/acknode/ackstream/app > ./tests/benchplots/out.data
 
 awk '/Benchmark/{count++; gsub(/BenchmarkTest/,""); { if ($2 == "") count-=1; else printf("%d,%s,%s,%s\n",count,$1,$2,$3);}} ' ./tests/benchplots/out.data > ./tests/benchplots/final.data
 
