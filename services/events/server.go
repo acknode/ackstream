@@ -28,7 +28,7 @@ func NewServer(ctx context.Context) (*grpc.Server, error) {
 	server := grpc.NewServer(
 		grpc.UnaryInterceptor(
 			func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
-				logger.Debugw("request.method", info.FullMethod)
+				logger.Debugw("handling request", "request.method", info.FullMethod)
 				resp, err = handler(ctx, req)
 
 				return

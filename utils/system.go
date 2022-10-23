@@ -28,3 +28,13 @@ func ScanFiles(root, ext string) ([]string, error) {
 func WithHealthCheck(keyPath string) error {
 	return os.WriteFile(keyPath, []byte(time.Now().Format(time.RFC3339)), 0644)
 }
+
+func GetRootDir() (*string, error) {
+	exec, err := os.Getwd()
+	if err != nil {
+		return nil, err
+	}
+	execDir := filepath.Dir(exec)
+	cwd := filepath.Join(execDir, "../")
+	return &cwd, nil
+}

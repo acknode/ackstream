@@ -7,17 +7,16 @@ import (
 	"github.com/acknode/ackstream/internal/configs"
 	"github.com/acknode/ackstream/pkg/xlogger"
 	"github.com/acknode/ackstream/utils"
-	"os"
 	"path"
 )
 
 func WithConfigs(ctx context.Context) (context.Context, error) {
-	cwd, err := os.Getwd()
+	cwd, err := utils.GetRootDir()
 	if err != nil {
 		return ctx, err
 	}
 
-	provider, err := configs.NewProvider(cwd, path.Join(cwd, "secrets"))
+	provider, err := configs.NewProvider(*cwd, path.Join(*cwd, "secrets"))
 	if err != nil {
 		return ctx, err
 	}

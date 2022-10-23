@@ -6,6 +6,8 @@ import (
 	eventscfg "github.com/acknode/ackstream/services/events/configs"
 	"github.com/acknode/ackstream/services/events/protos"
 	"github.com/spf13/cobra"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/metadata"
 )
 
 func NewCallEventsPub() *cobra.Command {
@@ -32,17 +34,26 @@ func NewCallEventsPub() *cobra.Command {
 				logger.Fatal(err)
 			}
 
+			meta := metadata.New(map[string]string{
+				"content-type":         "application/grpc",
+				"acknode-service-name": "ackstream-events",
+			})
+			logger.Infow("sending", "event_key", event.Key(), "headers", meta)
+			ctx = metadata.NewOutgoingContext(ctx, meta)
+
 			req := &protos.PubReq{
 				Workspace: event.Workspace,
 				App:       event.App,
 				Type:      event.Type,
 				Data:      event.Data,
 			}
-			res, err := client.Pub(ctx, req)
+
+			var headers metadata.MD
+			res, err := client.Pub(ctx, req, grpc.Header(&headers))
 			if err != nil {
 				logger.Fatal(err)
 			}
-			logger.Infow("received", "response", res)
+			logger.Infow("received", "response", res, "headers", headers)
 
 			if err := conn.Close(); err != nil {
 				logger.Fatal(err)
