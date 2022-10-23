@@ -59,7 +59,7 @@ func NewProvider(dirs ...string) (*viper.Viper, error) {
 
 func New(provider *viper.Viper, sets []string) (*Configs, error) {
 	configs := Configs{
-		Debug: utils.IsDebug("ACKSTREAM_ENV"),
+		Debug: utils.IsDebug("ACKSTREAM_ENV") || provider.GetString("ACKSTREAM_ENV") == "dev",
 	}
 
 	// Allow override configs via parameters

@@ -1,7 +1,6 @@
 package entities
 
 import (
-	"errors"
 	"github.com/go-playground/validator/v10"
 	"strings"
 
@@ -27,7 +26,7 @@ type Event struct {
 func (event *Event) WithId() error {
 	// only set data if it wasn't set yet
 	if event.Id != "" {
-		return errors.New("id has set already")
+		return ErrEventIdWasSet
 	}
 
 	event.Id = utils.NewId("event")
@@ -37,10 +36,10 @@ func (event *Event) WithId() error {
 func (event *Event) WithBucket(template string) error {
 	// only set data if it wasn't set yet
 	if event.Timestamps > 0 {
-		return errors.New("timestamps has set already")
+		return ErrEventTsWasSet
 	}
 	if event.Bucket != "" {
-		return errors.New("bucket has set already")
+		return ErrEventBucketWasSet
 	}
 	event.Bucket, event.Timestamps = utils.NewBucket(template)
 	return nil
