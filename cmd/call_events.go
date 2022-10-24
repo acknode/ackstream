@@ -31,6 +31,7 @@ func NewCallEvents() *cobra.Command {
 
 	command.AddCommand(NewCallEventsHealth())
 	command.AddCommand(NewCallEventsPub())
+	command.AddCommand(NewCallEventsSub())
 
 	return command
 }

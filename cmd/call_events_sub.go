@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"context"
 	"github.com/acknode/ackstream/pkg/xlogger"
 	"github.com/acknode/ackstream/services/events"
 	eventscfg "github.com/acknode/ackstream/services/events/configs"
@@ -9,21 +8,21 @@ import (
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
-	"time"
+	"io"
 )
 
-func NewCallEventsPub() *cobra.Command {
+func NewCallEventsSub() *cobra.Command {
 	command := &cobra.Command{
-		Use:               "pub",
-		Short:             "publish an event to our gRPC service",
-		Example:           "ackstream call events pub -w ws_default -a app_demo -t cli.grpc.trigger -p env=local -p os=macos",
+		Use:               "sub",
+		Short:             "subscribe event streaming from our gRPC service",
+		Example:           "ackstream call events sub -w ws_default -a app_demo -t cli.grpc.trigger",
 		PersistentPreRunE: UseChain(),
 		Run: func(cmd *cobra.Command, args []string) {
 			ctx := cmd.Context()
 
 			cfg := eventscfg.FromContext(ctx)
 			logger := xlogger.FromContext(ctx).
-				With("cli.fn", "call.events.pub").
+				With("cli.fn", "call.events.sub").
 				With("events.grpc_listen_address", cfg.GRPCListenAddress)
 
 			conn, client, err := events.NewClient(ctx)
@@ -48,22 +47,30 @@ func NewCallEventsPub() *cobra.Command {
 			logger.Infow("sending", "event_key", event.Key(), "headers", meta)
 			ctx = metadata.NewOutgoingContext(ctx, meta)
 
-			req := &protos.PubReq{
+			req := &protos.SubReq{
 				Workspace: event.Workspace,
 				App:       event.App,
 				Type:      event.Type,
-				Data:      event.Data,
 			}
 
-			ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
-			defer cancel()
 			var headers metadata.MD
-			res, err := client.Pub(ctx, req, grpc.Header(&headers))
+			stream, err := client.Sub(ctx, req, grpc.Header(&headers))
 			if err != nil {
 				logger.Fatal(err)
 			}
-			logger.Infow("received", "response", res, "headers", headers)
+			logger.Infow("receiving", "headers", headers)
 
+			for {
+				event, err := stream.Recv()
+				if err != nil {
+					if err == io.EOF {
+						break
+					}
+					logger.Error(err)
+				}
+
+				logger.Infow("received", "event", event)
+			}
 		},
 	}
 

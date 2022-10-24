@@ -24,6 +24,7 @@ const _ = grpc.SupportPackageIsVersion7
 type EventsClient interface {
 	Health(ctx context.Context, in *HealthReq, opts ...grpc.CallOption) (*HealthRes, error)
 	Pub(ctx context.Context, in *PubReq, opts ...grpc.CallOption) (*PubRes, error)
+	Sub(ctx context.Context, in *SubReq, opts ...grpc.CallOption) (Events_SubClient, error)
 }
 
 type eventsClient struct {
@@ -52,12 +53,45 @@ func (c *eventsClient) Pub(ctx context.Context, in *PubReq, opts ...grpc.CallOpt
 	return out, nil
 }
 
+func (c *eventsClient) Sub(ctx context.Context, in *SubReq, opts ...grpc.CallOption) (Events_SubClient, error) {
+	stream, err := c.cc.NewStream(ctx, &Events_ServiceDesc.Streams[0], "/protos.Events/Sub", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &eventsSubClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type Events_SubClient interface {
+	Recv() (*SubRes, error)
+	grpc.ClientStream
+}
+
+type eventsSubClient struct {
+	grpc.ClientStream
+}
+
+func (x *eventsSubClient) Recv() (*SubRes, error) {
+	m := new(SubRes)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 // EventsServer is the server API for Events service.
 // All implementations must embed UnimplementedEventsServer
 // for forward compatibility
 type EventsServer interface {
 	Health(context.Context, *HealthReq) (*HealthRes, error)
 	Pub(context.Context, *PubReq) (*PubRes, error)
+	Sub(*SubReq, Events_SubServer) error
 	mustEmbedUnimplementedEventsServer()
 }
 
@@ -70,6 +104,9 @@ func (UnimplementedEventsServer) Health(context.Context, *HealthReq) (*HealthRes
 }
 func (UnimplementedEventsServer) Pub(context.Context, *PubReq) (*PubRes, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Pub not implemented")
+}
+func (UnimplementedEventsServer) Sub(*SubReq, Events_SubServer) error {
+	return status.Errorf(codes.Unimplemented, "method Sub not implemented")
 }
 func (UnimplementedEventsServer) mustEmbedUnimplementedEventsServer() {}
 
@@ -120,6 +157,27 @@ func _Events_Pub_Handler(srv interface{}, ctx context.Context, dec func(interfac
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Events_Sub_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(SubReq)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(EventsServer).Sub(m, &eventsSubServer{stream})
+}
+
+type Events_SubServer interface {
+	Send(*SubRes) error
+	grpc.ServerStream
+}
+
+type eventsSubServer struct {
+	grpc.ServerStream
+}
+
+func (x *eventsSubServer) Send(m *SubRes) error {
+	return x.ServerStream.SendMsg(m)
+}
+
 // Events_ServiceDesc is the grpc.ServiceDesc for Events service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -136,6 +194,12 @@ var Events_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _Events_Pub_Handler,
 		},
 	},
-	Streams:  []grpc.StreamDesc{},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "Sub",
+			Handler:       _Events_Sub_Handler,
+			ServerStreams: true,
+		},
+	},
 	Metadata: "events.proto",
 }

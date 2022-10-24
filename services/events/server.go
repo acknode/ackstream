@@ -22,6 +22,11 @@ func NewServer(ctx context.Context) (*grpc.Server, error) {
 		return nil, err
 	}
 
+	sub, err := app.NewSub(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	logger := xlogger.FromContext(ctx)
 	cfg := configs.FromContext(ctx)
 
@@ -39,6 +44,7 @@ func NewServer(ctx context.Context) (*grpc.Server, error) {
 		logger: logger,
 		cfg:    cfg,
 		pub:    pub,
+		sub:    sub,
 	})
 	reflection.Register(server)
 
@@ -51,6 +57,16 @@ type Server struct {
 	logger *zap.SugaredLogger
 	cfg    *configs.Configs
 	pub    app.Pub
+	sub    app.Sub
+}
+
+func (s *Server) Health(context.Context, *protos.HealthReq) (*protos.HealthRes, error) {
+	host, _ := os.Hostname()
+	res := &protos.HealthRes{
+		Host:    host,
+		Version: s.cfg.Version,
+	}
+	return res, nil
 }
 
 func (s *Server) Pub(ctx context.Context, req *protos.PubReq) (*protos.PubRes, error) {
@@ -96,11 +112,39 @@ func (s *Server) Pub(ctx context.Context, req *protos.PubReq) (*protos.PubRes, e
 	return res, nil
 }
 
-func (s *Server) Health(context.Context, *protos.HealthReq) (*protos.HealthRes, error) {
-	host, _ := os.Hostname()
-	res := &protos.HealthRes{
-		Host:    host,
-		Version: s.cfg.Version,
+func (s *Server) Sub(req *protos.SubReq, srv protos.Events_SubServer) error {
+	errc := make(chan error)
+	resp := make(chan *protos.SubRes)
+
+	go func() {
+		sample := &entities.Event{}
+		err := s.sub(sample, "bugs", func(event *entities.Event) error {
+			resp <- &protos.SubRes{
+				Bucket:     event.Bucket,
+				Workspace:  event.Workspace,
+				App:        event.App,
+				Type:       event.Type,
+				Id:         event.Id,
+				Timestamps: event.Timestamps,
+				Data:       event.Data,
+			}
+			return nil
+		})
+		if err != nil {
+			errc <- err
+		}
+	}()
+
+	for {
+		select {
+		case err := <-errc:
+			return err
+		case <-srv.Context().Done():
+			return nil
+		case res := <-resp:
+			if err := srv.Send(res); err != nil {
+				s.logger.Errorw("sending response got error", "req", req)
+			}
+		}
 	}
-	return res, nil
 }

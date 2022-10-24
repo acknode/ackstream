@@ -7,6 +7,7 @@ service Events {
   rpc Health (HealthReq) returns (HealthRes) {}
 
   rpc Pub (PubReq) returns (PubRes) {}
+  rpc Sub (SubReq) returns (stream SubRes) {}
 }
 
 message HealthReq {}
@@ -27,4 +28,20 @@ message PubRes {
   string pubkey = 1;
   string bucket = 2;
   int64 timestamps = 3;
+}
+
+message SubReq {
+  string workspace = 1;
+  string app = 2;
+  string type = 3;
+}
+
+message SubRes {
+  string bucket= 1;
+  string workspace = 2;
+  string app = 3;
+  string type = 4;
+  string id = 5;
+  int64 timestamps = 6;
+  string data = 7;
 }
