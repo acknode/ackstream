@@ -25,13 +25,11 @@ do
 
   # generate report by count
   REPORT_OPERATIONS_COUNT="$BENCH_DIR/$BENCH_NAME.operations.count.png"
-  REPORT_OPERATIONS_COUNT_PLOT_MAX=$((BENCH_PARALLEL * 500))
-  echo $REPORT_OPERATIONS_COUNT_PLOT_MAX
+  REPORT_OPERATIONS_COUNT_PLOT_MAX=$(awk "BEGIN{print log($BENCH_PARALLEL)*2000}")
   gnuplot -e "file_path='$FINAL'" -e "graphic_file_name='$REPORT_OPERATIONS_COUNT'" -e "y_label='number of operations'" -e "y_range_min='0''" -e "y_range_max='$REPORT_OPERATIONS_COUNT_PLOT_MAX'" -e "column_1=1" -e "column_2=3" $BENCH_PROFILE
   # generate report by time
   REPORT_OPERATIONS_TIME="$BENCH_DIR/$BENCH_NAME.operations.time.png"
-  REPORT_OPERATIONS_TIME_PLOT_MAX=$((BENCH_PARALLEL * 500000))
-  echo $REPORT_OPERATIONS_TIME_PLOT_MAX
+  REPORT_OPERATIONS_TIME_PLOT_MAX=$(awk "BEGIN{print log($BENCH_PARALLEL)*1500000}")
   gnuplot -e "file_path='$FINAL'" -e "graphic_file_name='$REPORT_OPERATIONS_TIME'" -e "y_label='each operation in nanoseconds'" -e "y_range_min='0''" -e "y_range_max='$REPORT_OPERATIONS_TIME_PLOT_MAX'" -e "column_1=1" -e "column_2=4" $BENCH_PROFILE
 
   rm -rf "$OUT" "$FINAL"
