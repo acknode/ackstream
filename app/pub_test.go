@@ -5,6 +5,8 @@ import (
 	"github.com/acknode/ackstream/app"
 	"github.com/acknode/ackstream/internal/configs"
 	"github.com/stretchr/testify/assert"
+	"os"
+	"strconv"
 	"testing"
 	"time"
 )
@@ -27,11 +29,15 @@ func BenchmarkTestPub(b *testing.B) {
 
 	cfg := configs.FromContext(ctx)
 
-	ts := time.Now().UnixNano()
 	b.ResetTimer()
+	count, _ := strconv.Atoi(os.Getenv("BENCH_PARALLEL"))
+	b.ResetTimer()
+	if count > 0 {
+		b.SetParallelism(count)
+	}
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			event := GenEvent(cfg, ts)
+			event := GenEvent(cfg, time.Now().UnixNano())
 			_, err = pub(event)
 			assert.Nil(b, err)
 		}

@@ -2,14 +2,37 @@
 
 set -e
 
-BENCHTIME=${BENCHTIME:-"100000x"}
+MODULE_NAME="github.com/acknode/ackstream"
+BENCH_DIR="./tests/benchplots"
+BENCH_PROFILE="$BENCH_DIR/performance.gp"
+BENCH_TIME=${BENCH_TIME:-"15m"}
+BENCH_PARALLEL=${BENCH_PARALLEL:-1}
 
-go test -bench=. -cpu 2 -benchmem -benchtime "$BENCHTIME" -v  github.com/acknode/ackstream/services/events github.com/acknode/ackstream/app > ./tests/benchplots/out.data
+BENCH_PACKAGES=${BENCH_PACKAGES:-"app services/events"}
+for pkg in $BENCH_PACKAGES
+do
+  echo "PWD=${PWD}, PKG=${pkg}"
+  PKG_NAME="${MODULE_NAME}/${pkg}"
 
-awk '/Benchmark/{count++; gsub(/BenchmarkTest/,""); { if ($2 == "") count-=1; else printf("%d,%s,%s,%s\n",count,$1,$2,$3);}} ' ./tests/benchplots/out.data > ./tests/benchplots/final.data
+  BENCH_NAME="${pkg//\//_}"
+  OUT="$BENCH_DIR/$BENCH_NAME.out.data"
+  FINAL="$BENCH_DIR/$BENCH_NAME.final.data"
+  go test -bench=. -cpu 2,3 -benchmem -benchtime "$BENCH_TIME" -timeout 20m -v "$PKG_NAME" > "$OUT"
 
-gnuplot -e "file_path='./tests/benchplots/final.data'" -e "graphic_file_name='./tests/benchplots/operations.png'" -e "y_label='number of operations'" -e "y_range_min='000000''" -e "y_range_max='500000'" -e "column_1=1" -e "column_2=3" ./tests/benchplots/performance.gp
-gnuplot -e "file_path='./tests/benchplots/final.data'" -e "graphic_file_name='./tests/benchplots/time_operations.png'" -e "y_label='each operation in nanoseconds'" -e "y_range_min='0000000''" -e "y_range_max='5000000'" -e "column_1=1" -e "column_2=4" ./tests/benchplots/performance.gp
+  # analyze reports
+  awk '/Benchmark/{count++; gsub(/BenchmarkTest/,""); { if ($2 == "") count-=1; else printf("%d,%s,%s,%s\n",count,$1,$2,$3);}} ' "$OUT" > "$FINAL"
+  cat "$FINAL"
 
-cat ./tests/benchplots/final.data
-rm -f ./tests/benchplots/out.data ./tests/benchplots/final.data
+  # generate report by count
+  REPORT_OPERATIONS_COUNT="$BENCH_DIR/$BENCH_NAME.operations.count.png"
+  REPORT_OPERATIONS_COUNT_PLOT_MAX=$((BENCH_PARALLEL * 500))
+  echo $REPORT_OPERATIONS_COUNT_PLOT_MAX
+  gnuplot -e "file_path='$FINAL'" -e "graphic_file_name='$REPORT_OPERATIONS_COUNT'" -e "y_label='number of operations'" -e "y_range_min='0''" -e "y_range_max='$REPORT_OPERATIONS_COUNT_PLOT_MAX'" -e "column_1=1" -e "column_2=3" $BENCH_PROFILE
+  # generate report by time
+  REPORT_OPERATIONS_TIME="$BENCH_DIR/$BENCH_NAME.operations.time.png"
+  REPORT_OPERATIONS_TIME_PLOT_MAX=$((BENCH_PARALLEL * 500000))
+  echo $REPORT_OPERATIONS_TIME_PLOT_MAX
+  gnuplot -e "file_path='$FINAL'" -e "graphic_file_name='$REPORT_OPERATIONS_TIME'" -e "y_label='each operation in nanoseconds'" -e "y_range_min='0''" -e "y_range_max='$REPORT_OPERATIONS_TIME_PLOT_MAX'" -e "column_1=1" -e "column_2=4" $BENCH_PROFILE
+
+  rm -rf "$OUT" "$FINAL"
+done

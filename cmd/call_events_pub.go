@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"context"
 	"github.com/acknode/ackstream/pkg/xlogger"
 	"github.com/acknode/ackstream/services/events"
 	eventscfg "github.com/acknode/ackstream/services/events/configs"
@@ -8,6 +9,7 @@ import (
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
+	"time"
 )
 
 func NewCallEventsPub() *cobra.Command {
@@ -48,6 +50,8 @@ func NewCallEventsPub() *cobra.Command {
 				Data:      event.Data,
 			}
 
+			ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+			defer cancel()
 			var headers metadata.MD
 			res, err := client.Pub(ctx, req, grpc.Header(&headers))
 			if err != nil {
