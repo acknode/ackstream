@@ -9,6 +9,7 @@ import (
 	"github.com/acknode/ackstream/internal/configs"
 	"github.com/acknode/ackstream/pkg/xlogger"
 	"github.com/acknode/ackstream/services/events/protos"
+	"github.com/acknode/ackstream/utils"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
@@ -113,38 +114,41 @@ func (s *Server) Pub(ctx context.Context, req *protos.PubReq) (*protos.PubRes, e
 }
 
 func (s *Server) Sub(req *protos.SubReq, srv protos.Events_SubServer) error {
-	errc := make(chan error)
-	resp := make(chan *protos.SubRes)
-
-	go func() {
-		sample := &entities.Event{}
-		err := s.sub(sample, "bugs", func(event *entities.Event) error {
-			resp <- &protos.SubRes{
-				Bucket:     event.Bucket,
-				Workspace:  event.Workspace,
-				App:        event.App,
-				Type:       event.Type,
-				Id:         event.Id,
-				Timestamps: event.Timestamps,
-				Data:       event.Data,
-			}
-			return nil
-		})
-		if err != nil {
-			errc <- err
-		}
-	}()
-
-	for {
-		select {
-		case err := <-errc:
-			return err
-		case <-srv.Context().Done():
-			return nil
-		case res := <-resp:
-			if err := srv.Send(res); err != nil {
-				s.logger.Errorw("sending response got error", "req", req)
-			}
-		}
+	sample := &entities.Event{
+		Workspace: req.Workspace,
+		App:       req.App,
+		Type:      req.Type,
 	}
+	if sample.Workspace == "" {
+		return ErrEventNoWorkspace
+	}
+	if sample.App == "" {
+		return ErrEventNoApp
+	}
+	if sample.Type == "" {
+		return ErrEventNoType
+	}
+
+	err := s.sub(sample, utils.SnakeCase(sample.Workspace), func(event *entities.Event) error {
+		res := &protos.SubRes{
+			Bucket:     event.Bucket,
+			Workspace:  event.Workspace,
+			App:        event.App,
+			Type:       event.Type,
+			Id:         event.Id,
+			Timestamps: event.Timestamps,
+			Data:       event.Data,
+		}
+		err := srv.Send(res)
+		if err != nil {
+			s.logger.Errorw("sending response got error", "req", req)
+		}
+		return err
+	})
+	if err != nil {
+		return err
+	}
+
+	<-srv.Context().Done()
+	return srv.Context().Err()
 }
