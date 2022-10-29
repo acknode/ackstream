@@ -35,14 +35,13 @@ func NewProvider(dirs ...string) (*viper.Viper, error) {
 	}
 	// set default values
 	// common
-	provider.SetDefault("ACKSTREAM_REGION", "local")
 	provider.SetDefault("ACKSTREAM_VERSION", version())
 	provider.SetDefault("ACKSTREAM_BUCKET_TEMPLATE", "20060102")
 
 	// xstream
 	provider.SetDefault("ACKSTREAM_XSTREAM_URI", "nats://127.0.0.1:4222")
 	provider.SetDefault("ACKSTREAM_XSTREAM_NAME", "ackstream")
-	provider.SetDefault("ACKSTREAM_XSTREAM_REGION", provider.Get("ACKSTREAM_REGION"))
+	provider.SetDefault("ACKSTREAM_XSTREAM_REGION", "local")
 	provider.SetDefault("ACKSTREAM_XSTREAM_TOPIC", "events")
 	provider.SetDefault("ACKSTREAM_XSTREAM_MAX_MSG", 8192)      // 8 * 1024
 	provider.SetDefault("ACKSTREAM_XSTREAM_MAX_BYTES", 8388608) // 8 * 1024 * 1024
