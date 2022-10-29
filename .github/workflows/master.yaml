@@ -92,5 +92,5 @@ jobs:
           docker build . --tag ${{ secrets.ECR_USERNAME }}/ackstream:${{ needs.prepare.outputs.BUILD_ID }}
           docker push ${{ secrets.ECR_USERNAME }}/ackstream:${{ needs.prepare.outputs.BUILD_ID }}
           
-          docker build . --tag  sec${{rets.ECR_USERNAME }}/ackstream:latest
+          docker build . --tag ${{ secrets.ECR_USERNAME }}/ackstream:latest
           docker push ${{ secrets.ECR_USERNAME }}/ackstream:latest
