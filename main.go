@@ -27,7 +27,7 @@ func main() {
 }
 
 func exit(code int) {
-	if debug := utils.IsDebug("ACKSTREAM_ENV"); !debug {
+	if isDebug := utils.IsDebug("ACKSTREAM_ENV"); !isDebug {
 		log.Println("stopping...")
 		time.Sleep(5 * time.Second)
 	}
