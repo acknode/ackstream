@@ -23,4 +23,5 @@ COPY --from=build /app/docker-entrypoint.sh ./docker-entrypoint.sh
 RUN chmod +x /app/docker-entrypoint.sh
 
 EXPOSE 8080
+EXPOSE 8081
 ENTRYPOINT ["/app/docker-entrypoint.sh"]
