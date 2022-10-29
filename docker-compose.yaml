@@ -1,0 +1,18 @@
+version: "3.5"
+
+services:
+  nats-node-1:
+    image: nats:latest
+    restart: always
+    ports:
+      - "8222:8222"
+      - "4222:4222"
+    command: "-D -js --server_name nats-node-1 --http_port 8222"
+
+  scylla-node-1:
+    image: scylladb/scylla:latest
+    restart: always
+    command: --developer-mode 1 --smp 1 --memory 750M --overprovisioned 1 --api-address 0.0.0.0
+    ports:
+      - "9042:9042"
+      - "9100:9100"
