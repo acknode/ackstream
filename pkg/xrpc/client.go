@@ -45,7 +45,7 @@ func WithClientTLS(ctx context.Context, opts []grpc.DialOption) ([]grpc.DialOpti
 		return append(opts, grpc.WithTransportCredentials(insecure.NewCredentials())), nil
 	}
 
-	caFile := filepath.Join(cfg.ServerCertsDir, "ca-cert.pem")
+	caFile := filepath.Join(cfg.ClientCertsDir, "ca-cert.pem")
 	caCert, err := os.ReadFile(caFile)
 	if err != nil {
 		return nil, err

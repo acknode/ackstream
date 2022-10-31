@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"context"
 	"github.com/acknode/ackstream/internal/configs"
 	"github.com/acknode/ackstream/pkg/xlogger"
 	"github.com/acknode/ackstream/pkg/xrpc"
@@ -8,6 +9,8 @@ import (
 	"github.com/acknode/ackstream/services/events/protos"
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/metadata"
+	"time"
 )
 
 func NewCallEventsHealth() *cobra.Command {
@@ -39,12 +42,24 @@ func NewCallEventsHealth() *cobra.Command {
 				logger.Fatal(err)
 			}
 
+			meta := metadata.New(map[string]string{
+				"content-type":         "application/grpc",
+				"acknode-service-name": "ackstream-events",
+			})
+			logger.Infow("sending", "headers", meta)
+			ctx = metadata.NewOutgoingContext(ctx, meta)
+
 			req := &protos.HealthReq{}
-			res, err := client.Health(cmd.Context(), req)
+
+			ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+			defer cancel()
+
+			var headers metadata.MD
+			res, err := client.Health(ctx, req, grpc.Header(&headers))
 			if err != nil {
 				logger.Fatal(err)
 			}
-			logger.Infow("received", "response", res)
+			logger.Infow("received", "response", res, "headers", headers)
 		},
 	}
 
