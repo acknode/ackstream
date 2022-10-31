@@ -5,7 +5,7 @@ import "context"
 type Configs struct {
 	ServerCertsDir      string `json:"server_certs_dir" mapstructure:"ACKSTREAM_XRPC_SERVER_CERTS_DIR"`
 	ServerListenAddress string `json:"server_listen_address" mapstructure:"ACKSTREAM_XRPC_SERVER_LISTEN_ADDRESS"`
-	ClientCertsDir      string `json:"client_certs_dir" mapstructure:"ACKSTREAM_XRPC_CLIENT_CERTS_DIR"`
+	ClientCertFile      string `json:"client_cert_dir" mapstructure:"ACKSTREAM_XRPC_CLIENT_CERT_FILE"`
 	ClientRemoteAddress string `json:"client_remote_address" mapstructure:"ACKSTREAM_XRPC_CLIENT_REMOTE_ADDRESS"`
 }
 

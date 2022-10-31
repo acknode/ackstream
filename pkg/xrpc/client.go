@@ -10,7 +10,6 @@ import (
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 	"os"
-	"path/filepath"
 )
 
 func NewClient(ctx context.Context, opts []grpc.DialOption) (*grpc.ClientConn, error) {
@@ -40,13 +39,12 @@ func WithClientTLS(ctx context.Context, opts []grpc.DialOption) ([]grpc.DialOpti
 
 	logger := xlogger.FromContext(ctx).With("pkg", "xrpc", "fn", "xrpc.client")
 
-	if cfg.ClientCertsDir == "" {
+	if cfg.ClientCertFile == "" {
 		logger.Debugw("not certificate was given, start with unsecure mode")
 		return append(opts, grpc.WithTransportCredentials(insecure.NewCredentials())), nil
 	}
 
-	caFile := filepath.Join(cfg.ClientCertsDir, "server-cert.pem")
-	caCert, err := os.ReadFile(caFile)
+	caCert, err := os.ReadFile(cfg.ClientCertFile)
 	if err != nil {
 		return nil, err
 	}
@@ -55,7 +53,7 @@ func WithClientTLS(ctx context.Context, opts []grpc.DialOption) ([]grpc.DialOpti
 	if !certPool.AppendCertsFromPEM(caCert) {
 		return nil, ErrCACertNotLoad
 	}
-	logger.Debugw("start secure mode", "ca_file", caFile)
+	logger.Debugw("start secure mode", "ca_file", cfg.ClientCertFile)
 
 	// Create the credentials and return it
 	opt := grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{RootCAs: certPool}))
