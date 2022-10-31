@@ -10,11 +10,11 @@ import (
 )
 
 func NewServer(ctx context.Context, opts []grpc.ServerOption) (*grpc.Server, error) {
-	opts, err := WithServerTLS(ctx, opts)
+	opts, err := WithServerLogger(ctx, opts)
 	if err != nil {
 		return nil, err
 	}
-	opts, err = WithServerLogger(ctx, opts)
+	opts, err = WithServerTLS(ctx, opts)
 	if err != nil {
 		return nil, err
 	}
@@ -56,7 +56,7 @@ func WithServerLogger(ctx context.Context, opts []grpc.ServerOption) ([]grpc.Ser
 
 	opts = append(opts,
 		grpc.UnaryInterceptor(func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
-			logger.Debugw("handling request", "request.method", info.FullMethod)
+			logger.Errorw("handling request", "request.method", info.FullMethod)
 			resp, err = handler(ctx, req)
 			return
 		}),
