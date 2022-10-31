@@ -8,6 +8,7 @@ import (
 	"github.com/acknode/ackstream/entities"
 	"github.com/acknode/ackstream/internal/configs"
 	"github.com/acknode/ackstream/pkg/xlogger"
+	"github.com/acknode/ackstream/pkg/xrpc"
 	"github.com/acknode/ackstream/services/events/protos"
 	"github.com/acknode/ackstream/utils"
 	"go.uber.org/zap"
@@ -18,6 +19,11 @@ import (
 )
 
 func NewServer(ctx context.Context) (*grpc.Server, error) {
+	server, err := xrpc.NewServer(ctx, []grpc.ServerOption{})
+	if err != nil {
+		return nil, err
+	}
+
 	pub, err := app.NewPub(ctx)
 	if err != nil {
 		return nil, err
@@ -28,22 +34,9 @@ func NewServer(ctx context.Context) (*grpc.Server, error) {
 		return nil, err
 	}
 
-	logger := xlogger.FromContext(ctx)
-	cfg := configs.FromContext(ctx)
-
-	server := grpc.NewServer(
-		grpc.UnaryInterceptor(
-			func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
-				logger.Debugw("handling request", "request.method", info.FullMethod)
-				resp, err = handler(ctx, req)
-
-				return
-			},
-		),
-	)
 	protos.RegisterEventsServer(server, &Server{
-		logger: logger,
-		cfg:    cfg,
+		logger: xlogger.FromContext(ctx),
+		cfg:    configs.FromContext(ctx),
 		pub:    pub,
 		sub:    sub,
 	})

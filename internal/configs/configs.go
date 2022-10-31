@@ -1,6 +1,7 @@
 package configs
 
 import (
+	"github.com/acknode/ackstream/pkg/xrpc"
 	"github.com/acknode/ackstream/pkg/xstorage"
 	"github.com/acknode/ackstream/pkg/xstream"
 	"github.com/acknode/ackstream/utils"
@@ -16,6 +17,7 @@ type Configs struct {
 
 	XStream  *xstream.Configs  `json:"xstream"`
 	XStorage *xstorage.Configs `json:"xstorage"`
+	XRPC     *xrpc.Configs     `json:"xrpc"`
 }
 
 func NewProvider(dirs ...string) (*viper.Viper, error) {
@@ -53,6 +55,10 @@ func NewProvider(dirs ...string) (*viper.Viper, error) {
 	provider.SetDefault("ACKSTREAM_XSTORAGE_KEYSPACE", "ackstream")
 	provider.SetDefault("ACKSTREAM_XSTORAGE_TABLE", "events")
 
+	// xrpc
+	provider.SetDefault("ACKSTREAM_XRPC_SERVER_LISTEN_ADDRESS", ":8081")
+	provider.SetDefault("ACKSTREAM_XRPC_CLIENT_REMOTE_ADDRESS", ":8081")
+
 	return provider, nil
 }
 
@@ -80,6 +86,11 @@ func New(provider *viper.Viper, sets []string) (*Configs, error) {
 
 	// xstorage
 	if err := provider.Unmarshal(&configs.XStorage); err != nil {
+		return nil, err
+	}
+
+	// xrpc
+	if err := provider.Unmarshal(&configs.XRPC); err != nil {
 		return nil, err
 	}
 

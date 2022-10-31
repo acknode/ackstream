@@ -1,9 +1,10 @@
 package cmd
 
 import (
+	"github.com/acknode/ackstream/internal/configs"
 	"github.com/acknode/ackstream/pkg/xlogger"
+	"github.com/acknode/ackstream/pkg/xrpc"
 	"github.com/acknode/ackstream/services/events"
-	eventscfg "github.com/acknode/ackstream/services/events/configs"
 	"github.com/acknode/ackstream/services/events/protos"
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
@@ -20,12 +21,12 @@ func NewCallEventsSub() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			ctx := cmd.Context()
 
-			cfg := eventscfg.FromContext(ctx)
+			cfg := configs.FromContext(ctx)
 			logger := xlogger.FromContext(ctx).
 				With("cli.fn", "call.events.sub").
-				With("events.grpc_listen_address", cfg.GRPCListenAddress)
+				With("events.client_remote_address", cfg.XRPC.ClientRemoteAddress)
 
-			conn, client, err := events.NewClient(ctx)
+			conn, err := xrpc.NewClient(ctx, []grpc.DialOption{})
 			if err != nil {
 				logger.Fatal(err)
 			}
@@ -34,6 +35,11 @@ func NewCallEventsSub() *cobra.Command {
 					logger.Fatal(err)
 				}
 			}()
+
+			client, err := events.NewClient(ctx, conn)
+			if err != nil {
+				logger.Fatal(err)
+			}
 
 			event, err := parseEvent(cmd.Flags())
 			if err != nil {

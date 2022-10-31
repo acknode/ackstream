@@ -3,12 +3,11 @@ package cmd
 import (
 	"context"
 	"github.com/acknode/ackstream/app"
+	"github.com/acknode/ackstream/internal/configs"
 	"github.com/acknode/ackstream/pkg/xlogger"
 	"github.com/acknode/ackstream/services/events"
-	"github.com/acknode/ackstream/services/events/configs"
 	"github.com/acknode/ackstream/utils"
 	"github.com/spf13/cobra"
-	"github.com/spf13/pflag"
 	"net"
 	"os"
 	"os/signal"
@@ -18,29 +17,15 @@ import (
 
 func NewServeEvents() *cobra.Command {
 	command := &cobra.Command{
-		Use:     "events",
-		Short:   "serve events service",
-		Example: "ackstream serve events",
-		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-			chain := UseChain()
-			if err := chain(cmd, args); err != nil {
-				return err
-			}
-
-			logger := xlogger.FromContext(cmd.Context()).With("cli.fn", "serve.events")
-			cfg, err := parseEventsCfg(cmd.Flags())
-			if err != nil {
-				logger.Fatal(err)
-			}
-			ctx := configs.WithContext(cmd.Context(), cfg)
-			cmd.SetContext(ctx)
-			return nil
-		},
+		Use:               "events",
+		Short:             "serve events service",
+		Example:           "ackstream serve events",
+		PersistentPreRunE: UseChain(),
 		Run: func(cmd *cobra.Command, args []string) {
 			cfg := configs.FromContext(cmd.Context())
 			logger := xlogger.FromContext(cmd.Context()).
 				With("cli.fn", "serve.events").
-				With("events.grpc_listen_address", cfg.GRPCListenAddress)
+				With("events.server_listen_address", cfg.XRPC.ServerListenAddress)
 
 			ctx, err := app.Connect(cmd.Context())
 			if err != nil {
@@ -61,7 +46,7 @@ func NewServeEvents() *cobra.Command {
 			}
 
 			go func() {
-				listener, err := net.Listen("tcp", cfg.GRPCListenAddress)
+				listener, err := net.Listen("tcp", cfg.XRPC.ServerListenAddress)
 				if err != nil {
 					logger.Fatal(err)
 				}
@@ -69,7 +54,7 @@ func NewServeEvents() *cobra.Command {
 					logger.Fatal(err)
 				}
 			}()
-			logger.Infow("started gRPC", "endpoint", cfg.GRPCListenAddress)
+			logger.Infow("started gRPC", "endpoint", cfg.XRPC.ServerListenAddress)
 
 			if err := utils.WithHealthCheck(events.HEALTHCHECK_FILEPATH); err != nil {
 				logger.Fatal(err)
@@ -97,27 +82,4 @@ func NewServeEvents() *cobra.Command {
 	}
 
 	return command
-}
-
-func parseEventsCfg(flags *pflag.FlagSet) (*configs.Configs, error) {
-	sets, err := flags.GetStringArray("set")
-	if err != nil {
-		return nil, err
-	}
-	cfgdirs, err := flags.GetStringArray("configs-dirs")
-	if err != nil {
-		return nil, err
-	}
-
-	provider, err := configs.NewProvider(cfgdirs...)
-	if err != nil {
-		return nil, err
-	}
-
-	cfg, err := configs.New(provider, sets)
-	if err != nil {
-		return nil, err
-	}
-
-	return cfg, nil
 }

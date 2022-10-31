@@ -5,14 +5,13 @@ import (
 	"fmt"
 	"github.com/acknode/ackstream/entities"
 	"github.com/acknode/ackstream/pkg/xlogger"
+	"github.com/acknode/ackstream/pkg/xrpc"
 	"github.com/acknode/ackstream/services/events"
-	eventscfg "github.com/acknode/ackstream/services/events/configs"
 	"github.com/acknode/ackstream/services/events/protos"
 	"github.com/acknode/ackstream/utils"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc/metadata"
 	"os"
-	"path"
 	"strconv"
 	"testing"
 	"time"
@@ -21,15 +20,16 @@ import (
 func BenchmarkTestEventsPub(b *testing.B) {
 	ctx := context.Background()
 
-	ctx, err := WithConfigs(ctx)
-	assert.Nil(b, err)
-	ctx, err = WithLogger(ctx)
+	ctx, err := WithLogger(ctx)
 	assert.Nil(b, err)
 
-	conn, client, _ := events.NewClient(ctx)
+	conn, err := xrpc.NewClient(ctx)
+	assert.Nil(b, err)
 	defer func() {
 		_ = conn.Close()
 	}()
+	client, err := events.NewClient(ctx, conn)
+	assert.Nil(b, err)
 
 	meta := metadata.New(map[string]string{
 		"content-type":         "application/grpc",
@@ -61,24 +61,6 @@ func BenchmarkTestEventsPub(b *testing.B) {
 			}
 		}
 	})
-}
-
-func WithConfigs(ctx context.Context) (context.Context, error) {
-	cwd, err := utils.GetRootDir()
-	if err != nil {
-		return ctx, err
-	}
-	provider, err := eventscfg.NewProvider(*cwd, path.Join(*cwd, "secrets"))
-	if err != nil {
-		return ctx, err
-	}
-
-	cfg, err := eventscfg.New(provider, []string{"ACKSTREAM_ENV=test"})
-	if err != nil {
-		return ctx, err
-	}
-
-	return eventscfg.WithContext(ctx, cfg), nil
 }
 
 func WithLogger(ctx context.Context) (context.Context, error) {
