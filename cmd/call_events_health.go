@@ -24,7 +24,7 @@ func NewCallEventsHealth() *cobra.Command {
 
 			cfg := configs.FromContext(ctx)
 			logger := xlogger.FromContext(ctx).
-				With("cli.fn", "call.events.pub").
+				With("cli.fn", "call.events.health").
 				With("events.client_remote_address", cfg.XRPC.ClientRemoteAddress)
 
 			conn, err := xrpc.NewClient(ctx, []grpc.DialOption{})

@@ -56,7 +56,7 @@ func WithServerLogger(ctx context.Context, opts []grpc.ServerOption) ([]grpc.Ser
 
 	opts = append(opts,
 		grpc.UnaryInterceptor(func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
-			logger.Errorw("handling request", "request.method", info.FullMethod)
+			logger.Debugw("handling request", "request.method", info.FullMethod)
 			resp, err = handler(ctx, req)
 			return
 		}),
